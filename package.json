@@ -1,0 +1,18 @@
+{
+  "name": "meu-agente",
+  "version": "1.0.0",
+  "description": "Assistente Pessoal via WhatsApp com multiagentes",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.22.1",
+    "googleapis": "^171.4.0",
+    "twilio": "^5.4.5"
+  }
+}
