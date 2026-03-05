@@ -56,3 +56,20 @@ Bot de WhatsApp integrado com Google Sheets e Google Calendar, desenvolvido com 
 
 ## Estrutura
 
+
+src/
+agents/
+orchestrator.js       # Roteamento de mensagens
+tarefas.js            # Fluxo de tarefas
+agenda_.js            # Fluxo de agenda
+financeiro.js         # Fluxo financeiro
+lembretes.js          # Fluxo de lembretes personalizados
+services/
+googleSheets.js       # Integração Google Sheets (tarefas)
+googleCalendar.js     # Integração Google Calendar
+googleFinanceiro.js   # Integração Google Sheets (financeiro)
+googleLembretes.js    # Integração Google Sheets (lembretes)
+resumoAgenda.js       # Resumo diário de agenda
+lembreteVencimento.js # Lembretes de vencimento financeiro
+dispararLembretes.js  # Disparador de lembretes personalizados
+twilio.js             # Envio de mensagens WhatsApp
