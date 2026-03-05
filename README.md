@@ -1,45 +1,42 @@
-# Projeto: Assistente Pessoal – Agenda & Organização
+# Assistente Pessoal WhatsApp
 
-## Objetivo do Sistema
+Bot de WhatsApp integrado com Google Sheets e Google Calendar, desenvolvido com Node.js e implantado no Render.
 
-Criar um assistente pessoal inteligente capaz de:
-- Gerenciar compromissos
-- Organizar estudos
-- Enviar lembretes automáticos
-- Responder via WhatsApp
-- Funcionar 24h na nuvem
+## Funcionalidades
 
-## Problema que Resolve
+- **Tarefas**: Criar, listar e filtrar tarefas por categoria via Google Sheets
+- **Agenda**: Adicionar e consultar compromissos via Google Calendar
 
-- Falta de organização pessoal
-- Esquecimento de compromissos
-- Falta de controle de estudos
-- Dificuldade em centralizar tarefas
-- Falta de lembretes financeiros
+## Comandos
 
-## Funcionalidades Principais
+- `tarefa` → Abre o assistente de tarefas
+- `agenda` → Abre o assistente de agenda
+- `0` ou `cancelar` → Cancela o fluxo atual
 
-- **Gestão de Agenda:** Consultar, criar, editar compromissos e enviar lembretes.
-- **Comunicação via WhatsApp:** Receber comandos e enviar respostas/alertas.
-- **Planejamento de Estudos:** Criar planos de estudo por categoria com checklist de progresso.
-- **Organização de Tarefas:** Criar e gerenciar listas de tarefas por categoria.
-- **Gestão de Arquivos:** Salvar e organizar links e imagens.
-- **Lembretes Financeiros:** Registrar contas a pagar/investimentos e enviar alertas.
+## Tecnologias
 
-## Subagentes do Sistema
+- Node.js + Express
+- Twilio (WhatsApp API)
+- Google Sheets API
+- Google Calendar API
+- Render (hospedagem)
 
-- **Agente Orquestrador:** Coordena todos os outros agentes.
-- **Agente de Agenda:** Especialista em Google Calendar.
-- **Agente de Planejamento de Estudos:** Especialista em organização de estudos.
-- **Agente de Organização de Tarefas:** Especialista em listas de tarefas.
-- **Agente de Gestão de Arquivos:** Especialista em Google Drive.
-- **Agente de Lembretes Financeiros:** Especialista em controle financeiro.
+## Configuração
 
-## Fluxo Geral
+### Variáveis de ambiente (Render)
 
-1. Usuário envia mensagem no WhatsApp.
-2. O sistema (hospedado na Render e usando Twilio) recebe o comando.
-3. O Agente Orquestrador interpreta o pedido e delega ao especialista correto.
-4. O agente especialista executa a ação (usando APIs do Google, banco de dados Supabase, etc.).
-5. O sistema retorna a resposta ao usuário via WhatsApp.
+| Variável | Descrição |
+|---|---|
+| `TWILIO_ACCOUNT_SID` | SID da conta Twilio |
+| `TWILIO_AUTH_TOKEN` | Token de autenticação Twilio |
+| `TWILIO_WHATSAPP_NUMBER` | Número WhatsApp Twilio |
+| `SPREADSHEET_ID` | ID da planilha Google Sheets |
+| `GOOGLE_CALENDAR_ID` | ID do Google Calendar |
+
+### Secret Files (Render)
+
+- `/etc/secrets/serviceAccount.json` → Credenciais da Service Account do Google
+
+## Estrutura
+
 
