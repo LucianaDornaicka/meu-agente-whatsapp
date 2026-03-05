@@ -3,7 +3,9 @@ dotenv.config();
 
 import express from 'express';
 import { handle } from "./agents/orchestrator.js";
-import { verificarVencimentos } from "./services/lembreteVencimento.js";
+import { enviarResumoDiario } from "./services/resumoAgenda.js";
+import { lembreteVencimentoAmanha, lembreteVencimentoHoje } from "./services/lembreteVencimento.js";
+import { dispararLembretes } from "./services/dispararLembretes.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -18,13 +20,10 @@ app.post("/teste", (req, res) => {
 app.post("/webhook/whatsapp", (req, res) => {
   console.log("Mensagem recebida:");
   console.log(req.body);
-
   const mensagem = req.body?.Body;
   const remetente = req.body?.From;
-
   res.set("Content-Type", "text/xml");
   res.send("<Response></Response>");
-
   try {
     handle(mensagem, remetente);
   } catch (err) {
@@ -32,23 +31,36 @@ app.post("/webhook/whatsapp", (req, res) => {
   }
 });
 
-// Cron: verifica vencimentos todo dia às 9h (horário de Brasília = 12h UTC)
-function agendarLembretes() {
-  const agora = new Date();
-  const proximaExecucao = new Date();
-  proximaExecucao.setUTCHours(12, 0, 0, 0);
-  if (proximaExecucao <= agora) {
-    proximaExecucao.setDate(proximaExecucao.getDate() + 1);
+// Agenda um callback diário em horário Brasília
+function agendarDiario(horaBrasiliaH, minutos, callback, nome) {
+  const horaUTC = horaBrasiliaH + 3;
+  function calcularMs() {
+    const agora = new Date();
+    const proxima = new Date();
+    proxima.setUTCHours(horaUTC, minutos, 0, 0);
+    if (proxima <= agora) proxima.setDate(proxima.getDate() + 1);
+    return proxima - agora;
   }
-  const msAteProxima = proximaExecucao - agora;
-  console.log(`Próximo lembrete de vencimento em ${Math.round(msAteProxima / 60000)} minutos.`);
+  const ms = calcularMs();
+  console.log(`[${nome}] Próxima execução em ${Math.round(ms / 60000)} min.`);
   setTimeout(() => {
-    verificarVencimentos();
-    setInterval(verificarVencimentos, 24 * 60 * 60 * 1000);
-  }, msAteProxima);
+    callback();
+    setInterval(callback, 24 * 60 * 60 * 1000);
+  }, ms);
 }
 
-agendarLembretes();
+// Resumo diário de agenda: 21h Brasília
+agendarDiario(21, 0, enviarResumoDiario, 'Resumo Agenda');
+
+// Lembrete financeiro (dia anterior): 20h Brasília
+agendarDiario(20, 0, lembreteVencimentoAmanha, 'Vencimento Amanhã');
+
+// Lembrete financeiro (reforço no dia): 20h Brasília
+agendarDiario(20, 0, lembreteVencimentoHoje, 'Vencimento Hoje');
+
+// Disparador de lembretes personalizados: a cada 5 minutos
+setInterval(dispararLembretes, 5 * 60 * 1000);
+setTimeout(dispararLembretes, 30 * 1000);
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
