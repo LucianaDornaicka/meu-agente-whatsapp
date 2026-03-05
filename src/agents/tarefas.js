@@ -5,9 +5,9 @@ import {
   lerTarefasPorCategoria,
 } from '../services/googleSheets.js';
 
-// Exporta o objeto de estados para que o orquestrador possa gerenciá-lo.
-// O nome "estadosTarefas" é crucial para o orquestrador diferenciar os fluxos.
-export const estados = {}; // O orquestrador vai renomear para estadosTarefas
+// Exporta o objeto de estados. O orquestrador vai renomeá-lo para "estadosTarefas".
+// Dentro deste arquivo, ele se chama apenas "estados".
+export const estados = {};
 
 /**
  * Agente responsável por todo o fluxo de gerenciamento de tarefas.
@@ -15,15 +15,9 @@ export const estados = {}; // O orquestrador vai renomear para estadosTarefas
 export async function agenteTarefas(mensagem, remetente) {
   const texto = mensagem.toLowerCase().trim();
 
-  // O comando de sair "0" ou "cancelar" é tratado globalmente pelo orquestrador.
-  // Não precisamos mais tratá-lo aqui.
+  // O comando de sair "0" é tratado globalmente pelo orquestrador.
 
-  // --------------------------------------------------------------------------
-  // 2. INÍCIO DO FLUXO
-  // --------------------------------------------------------------------------
-
-  // Se o usuário digita "tarefa" e não está em um fluxo, inicia o menu.
-  // **CORREÇÃO APLICADA AQUI**
+  // --- INÍCIO DO FLUXO ---
   if (!estados[remetente]) {
     estados[remetente] = { etapa: "menu" };
     return {
@@ -41,17 +35,12 @@ A qualquer momento, digite *0* para sair.`
     };
   }
 
-  // --------------------------------------------------------------------------
-  // 3. MÁQUINA DE ESTADOS DA CONVERSA
-  // --------------------------------------------------------------------------
-
-  // **CORREÇÃO APLICADA AQUI**
+  // --- MÁQUINA DE ESTADOS DA CONVERSA ---
   const estado = estados[remetente];
   let resultado;
 
   switch (estado.etapa) {
 
-    // --- ETAPA: MENU PRINCIPAL ---
     case "menu":
       switch (texto) {
         case "1":
@@ -70,7 +59,7 @@ A qualquer momento, digite *0* para sair.`
             });
             resultado = { sucesso: true, resposta: listaFormatada };
           }
-          delete estados[remetente]; // Finaliza o fluxo
+          delete estados[remetente];
           break;
         }
 
@@ -81,7 +70,7 @@ A qualquer momento, digite *0* para sair.`
           } else {
             resultado = { sucesso: true, resposta: "📂 *Categorias existentes:*\n\n- " + categorias.join("\n- ") };
           }
-          delete estados[remetente]; // Finaliza o fluxo
+          delete estados[remetente];
           break;
         }
 
@@ -96,14 +85,12 @@ A qualquer momento, digite *0* para sair.`
       }
       break;
 
-    // --- ETAPA: CRIAR TAREFA (CATEGORIA) ---
     case "pedir_categoria":
       estado.categoria = texto;
       estado.etapa = "pedir_descricao";
       resultado = { sucesso: true, resposta: "📝 Ótimo! Agora, qual a descrição da tarefa?" };
       break;
 
-    // --- ETAPA: CRIAR TAREFA (DESCRIÇÃO) ---
     case "pedir_descricao":
       estado.descricao = texto;
       await adicionarTarefaNaPlanilha({
@@ -114,7 +101,6 @@ A qualquer momento, digite *0* para sair.`
       delete estados[remetente];
       break;
 
-    // --- ETAPA: CONSULTAR TAREFA (CATEGORIA) ---
     case "pedir_categoria_consulta": {
       const categoriaConsultada = texto;
       const tarefas = await lerTarefasPorCategoria(categoriaConsultada);
@@ -131,7 +117,6 @@ A qualquer momento, digite *0* para sair.`
       break;
     }
 
-    // --- ETAPA PADRÃO (Fallback) ---
     default:
       delete estados[remetente];
       resultado = { sucesso: false, resposta: "🤔 Ocorreu um erro no fluxo. Vamos recomeçar. Digite *tarefa*." };
