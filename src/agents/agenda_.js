@@ -4,27 +4,29 @@ import { adicionarEventoNaAgenda, listarEventosDoDia } from '../services/googleC
 export const estados = {};
 
 /**
+ * Converte data e hora do formato brasileiro para o formato ISO 8601.
+ * Ex: '12/03/2026' e '14:00' -> '2026-03-12T14:00:00-03:00'
+ */
+function converterParaISO(data, hora) {
+  const [dia, mes, ano] = data.split('/');
+  const [h, min] = hora.split(':');
+  // Formato: YYYY-MM-DDTHH:mm:ss-03:00 (Fuso de São Paulo)
+  return `${ano}-${mes}-${dia}T${h.padStart(2, '0')}:${min.padStart(2, '0')}:00-03:00`;
+}
+
+/**
  * Agente para gerenciar o fluxo de agendamento.
  */
 export async function agenteAgenda(mensagem, remetente) {
-  const texto = mensagem.toLowerCase().trim();
+  const texto = mensagem.trim(); // Não converter para minúsculas para pegar nomes/títulos
   const estado = estados[remetente];
-
-  // O comando de sair "0" é tratado globalmente pelo orquestrador.
 
   // --- Início do Fluxo ---
   if (!estado) {
     estados[remetente] = { etapa: "menu" };
     return {
       sucesso: true,
-      resposta: `🗓️ *Assistente de Agenda*
-
-O que você gostaria de fazer?
-
-1️⃣  Adicionar um novo compromisso
-2️⃣  Ver os compromissos de um dia
-
-A qualquer momento, digite *0* para sair.`
+      resposta: `🗓️ *Assistente de Agenda*\n\nO que você gostaria de fazer?\n\n1️⃣  Adicionar um novo compromisso\n2️⃣  Ver os compromissos de um dia\n\nA qualquer momento, digite *0* para sair.`
     };
   }
 
@@ -44,16 +46,77 @@ A qualquer momento, digite *0* para sair.`
       }
       break;
 
-    // ... (outros cases do fluxo de agendamento)
-
-    // Exemplo de case para consultar eventos
-    case "pedir_data_consulta": {
-      // Supondo que a data venha em DD/MM/AAAA, precisamos converter para YYYY-MM-DD
-      const [dia, mes, ano] = texto.split('/');
-      if (!dia || !mes || !ano) {
-          resultado = { sucesso: false, resposta: "Formato de data inválido. Use DD/MM/AAAA." };
-          break;
+    // --- FLUXO DE CRIAÇÃO DE COMPROMISSO ---
+    case "pedir_data":
+      // Validação simples de data
+      if (!/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) {
+        resultado = { sucesso: false, resposta: "Formato de data inválido. Por favor, use DD/MM/AAAA." };
+        break;
       }
+      estado.data = texto;
+      estado.etapa = "pedir_hora_inicio";
+      resultado = { sucesso: true, resposta: "Qual o horário de início? (formato HH:MM)" };
+      break;
+
+    case "pedir_hora_inicio":
+      if (!/^\d{2}:\d{2}$/.test(texto)) {
+        resultado = { sucesso: false, resposta: "Formato de hora inválido. Por favor, use HH:MM." };
+        break;
+      }
+      estado.horaInicio = texto;
+      estado.etapa = "pedir_hora_fim";
+      resultado = { sucesso: true, resposta: "Qual o horário de término? (formato HH:MM)" };
+      break;
+
+    case "pedir_hora_fim":
+      if (!/^\d{2}:\d{2}$/.test(texto)) {
+        resultado = { sucesso: false, resposta: "Formato de hora inválido. Por favor, use HH:MM." };
+        break;
+      }
+      estado.horaFim = texto;
+      estado.etapa = "pedir_titulo";
+      resultado = { sucesso: true, resposta: "Qual o título do compromisso?" };
+      break;
+
+    case "pedir_titulo":
+      estado.titulo = texto;
+      estado.etapa = "confirmar_criacao";
+      resultado = {
+        sucesso: true,
+        resposta: `Confirma o agendamento?\n\n*Título:* ${estado.titulo}\n*Data:* ${estado.data}\n*Início:* ${estado.horaInicio}\n*Fim:* ${estado.horaFim}\n\nDigite *sim* para confirmar ou *não* para cancelar.`
+      };
+      break;
+
+    case "confirmar_criacao":
+      if (texto.toLowerCase() === 'sim') {
+        try {
+          await adicionarEventoNaAgenda({
+            summary: estado.titulo,
+            description: 'Criado pelo Assistente WhatsApp',
+            startDateTime: converterParaISO(estado.data, estado.horaInicio),
+            endDateTime: converterParaISO(estado.data, estado.horaFim),
+          });
+          resultado = { sucesso: true, resposta: `✅ Compromisso \"${estado.titulo}\" agendado com sucesso!` };
+        } catch (error) {
+          console.error("Erro ao criar evento no agente:", error);
+          resultado = { sucesso: false, resposta: "Desculpe, não consegui criar o evento no Google Calendar. Tente novamente." };
+        }
+        delete estados[remetente];
+      } else if (texto.toLowerCase() === 'não') {
+        resultado = { sucesso: true, resposta: "Agendamento cancelado." };
+        delete estados[remetente];
+      } else {
+        resultado = { sucesso: false, resposta: "Resposta inválida. Por favor, digite 'sim' ou 'não'." };
+      }
+      break;
+
+    // --- FLUXO DE CONSULTA DE COMPROMISSO ---
+    case "pedir_data_consulta": {
+      if (!/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) {
+        resultado = { sucesso: false, resposta: "Formato de data inválido. Use DD/MM/AAAA." };
+        break;
+      }
+      const [dia, mes, ano] = texto.split('/');
       const dataFormatada = `${ano}-${mes}-${dia}`;
       
       try {
@@ -73,12 +136,9 @@ A qualquer momento, digite *0* para sair.`
         resultado = { sucesso: false, resposta: "Desculpe, não consegui consultar os eventos. Tente novamente." };
       }
       
-      delete estados[remetente]; // Finaliza o fluxo
+      delete estados[remetente];
       break;
     }
-
-    // Adicione aqui os outros cases para o fluxo de criação de evento (pedir_data, pedir_hora, etc.)
-    // Por enquanto, vamos manter simples para garantir que a conexão funcione.
 
     default:
       delete estados[remetente];
