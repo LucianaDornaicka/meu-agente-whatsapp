@@ -7,23 +7,9 @@ export async function handle(mensagem, remetente) {
   const texto = mensagem?.toLowerCase().trim() || "";
   let resultado;
 
-  // --- NOVO BLOCO DE CÓDIGO ---
-
-    // ===============================
-    // COMANDO GLOBAL "SAIR" (PRIORIDADE MÁXIMA)
-    // ===============================
-    if (texto === "0" || texto === "cancelar") {
-      delete estadosAgenda[remetente];
-      delete estadosTarefas[remetente];
-      resultado = { sucesso: true, resposta: "✅ Ok, fluxo cancelado. Digite *tarefa* ou *agenda* para começar." };
-    }
-
-// --- FIM DO NOVO BLOCO ---
-
-
   try {
     // ===============================
-    // COMANDO GLOBAL "SAIR" (PRIORIDADE MÁXIMA)
+    // 1. COMANDO GLOBAL "SAIR" (PRIORIDADE MÁXIMA)
     // ===============================
     if (texto === "0" || texto === "cancelar") {
       delete estadosAgenda[remetente];
@@ -31,7 +17,7 @@ export async function handle(mensagem, remetente) {
       resultado = { sucesso: true, resposta: "✅ Ok, fluxo cancelado. Digite *tarefa* ou *agenda* para começar." };
     }
     // ===============================
-    // INICIAR/REINICIAR TAREFAS
+    // 2. INICIAR/REINICIAR FLUXOS
     // ===============================
     else if (texto === "tarefa" || texto === "tarefas") {
       // Limpa ambos os estados para garantir um início limpo
@@ -39,9 +25,6 @@ export async function handle(mensagem, remetente) {
       delete estadosTarefas[remetente];
       resultado = await agenteTarefas(mensagem, remetente);
     }
-    // ===============================
-    // INICIAR/REINICIAR AGENDA
-    // ===============================
     else if (texto.includes("agenda")) {
       // Limpa ambos os estados para garantir um início limpo
       delete estadosAgenda[remetente];
@@ -49,19 +32,16 @@ export async function handle(mensagem, remetente) {
       resultado = await agenteAgenda(mensagem, remetente);
     }
     // ===============================
-    // FLUXO ATIVO: TAREFAS
+    // 3. CONTINUAR FLUXOS ATIVOS
     // ===============================
     else if (estadosTarefas[remetente]) {
       resultado = await agenteTarefas(mensagem, remetente);
     }
-    // ===============================
-    // FLUXO ATIVO: AGENDA
-    // ===============================
     else if (estadosAgenda[remetente]) {
       resultado = await agenteAgenda(mensagem, remetente);
     }
     // ===============================
-    // COMANDO DESCONHECIDO (NENHUM FLUXO ATIVO)
+    // 4. COMANDO DESCONHECIDO (NENHUM FLUXO ATIVO)
     // ===============================
     else {
       resultado = {
