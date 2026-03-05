@@ -1,9 +1,7 @@
 import { sendMessage } from '../services/twilio.js';
+// Importa os agentes e seus respectivos objetos de estado
 import { agenteAgenda, estados as estadosAgenda } from './agenda_.js';
 import { agenteTarefas, estados as estadosTarefas } from './tarefas.js';
-
-// Objeto para manter o estado de cada remetente
-export const estados = {};
 
 export async function handle(mensagem, remetente) {
   const texto = mensagem?.toLowerCase().trim() || "";
@@ -11,20 +9,30 @@ export async function handle(mensagem, remetente) {
 
   try {
     // ===============================
-    // COMANDO GLOBAL: REINICIAR
+    // COMANDO GLOBAL "SAIR" (PRIORIDADE MÁXIMA)
     // ===============================
-    if (texto === "tarefa" || texto === "tarefas") {
+    if (texto === "0" || texto === "cancelar") {
+      delete estadosAgenda[remetente];
       delete estadosTarefas[remetente];
-      delete estadosAgenda[remetente]; // Garante que saia de qualquer fluxo
+      resultado = { sucesso: true, resposta: "✅ Ok, fluxo cancelado. Digite *tarefa* ou *agenda* para começar." };
+    }
+    // ===============================
+    // INICIAR/REINICIAR TAREFAS
+    // ===============================
+    else if (texto === "tarefa" || texto === "tarefas") {
+      // Limpa ambos os estados para garantir um início limpo
+      delete estadosAgenda[remetente];
+      delete estadosTarefas[remetente];
       resultado = await agenteTarefas(mensagem, remetente);
     }
     // ===============================
-    // INICIAR AGENDA
+    // INICIAR/REINICIAR AGENDA
     // ===============================
     else if (texto.includes("agenda")) {
-        delete estadosTarefas[remetente];
-        delete estadosAgenda[remetente];
-        resultado = await agenteAgenda(mensagem, remetente);
+      // Limpa ambos os estados para garantir um início limpo
+      delete estadosAgenda[remetente];
+      delete estadosTarefas[remetente];
+      resultado = await agenteAgenda(mensagem, remetente);
     }
     // ===============================
     // FLUXO ATIVO: TAREFAS
@@ -39,7 +47,7 @@ export async function handle(mensagem, remetente) {
       resultado = await agenteAgenda(mensagem, remetente);
     }
     // ===============================
-    // COMANDO DESCONHECIDO
+    // COMANDO DESCONHECIDO (NENHUM FLUXO ATIVO)
     // ===============================
     else {
       resultado = {
