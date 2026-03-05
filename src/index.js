@@ -3,6 +3,7 @@ dotenv.config();
 
 import express from 'express';
 import { handle } from "./agents/orchestrator.js";
+import { verificarVencimentos } from "./services/lembreteVencimento.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,17 +22,34 @@ app.post("/webhook/whatsapp", (req, res) => {
   const mensagem = req.body?.Body;
   const remetente = req.body?.From;
 
-  // Responde imediatamente
   res.set("Content-Type", "text/xml");
   res.send("<Response></Response>");
 
-  // Processa depois com proteção
   try {
     handle(mensagem, remetente);
   } catch (err) {
     console.error("Erro no handle:", err);
   }
 });
+
+// Cron: verifica vencimentos todo dia às 9h (horário de Brasília = 12h UTC)
+function agendarLembretes() {
+  const agora = new Date();
+  const proximaExecucao = new Date();
+  proximaExecucao.setUTCHours(12, 0, 0, 0);
+  if (proximaExecucao <= agora) {
+    proximaExecucao.setDate(proximaExecucao.getDate() + 1);
+  }
+  const msAteProxima = proximaExecucao - agora;
+  console.log(`Próximo lembrete de vencimento em ${Math.round(msAteProxima / 60000)} minutos.`);
+  setTimeout(() => {
+    verificarVencimentos();
+    setInterval(verificarVencimentos, 24 * 60 * 60 * 1000);
+  }, msAteProxima);
+}
+
+agendarLembretes();
+
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 });
