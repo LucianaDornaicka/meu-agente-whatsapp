@@ -23,12 +23,15 @@ export async function agenteAgenda(mensagem, remetente) {
       sucesso: true,
       resposta: `🗓️ *Assistente de Agenda*
 
+resposta: `🗓️ *Assistente de Agenda*
+
 O que você gostaria de fazer?
 
 1️⃣  Adicionar um novo compromisso
 2️⃣  Editar os compromissos de um dia
 
-A qualquer momento, digite *cancelar* para sair.`
+A qualquer momento, digite *0* para sair.`
+`
     };
   }
 

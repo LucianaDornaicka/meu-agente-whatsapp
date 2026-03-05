@@ -7,6 +7,20 @@ export async function handle(mensagem, remetente) {
   const texto = mensagem?.toLowerCase().trim() || "";
   let resultado;
 
+  // --- NOVO BLOCO DE CÓDIGO ---
+
+    // ===============================
+    // COMANDO GLOBAL "SAIR" (PRIORIDADE MÁXIMA)
+    // ===============================
+    if (texto === "0" || texto === "cancelar") {
+      delete estadosAgenda[remetente];
+      delete estadosTarefas[remetente];
+      resultado = { sucesso: true, resposta: "✅ Ok, fluxo cancelado. Digite *tarefa* ou *agenda* para começar." };
+    }
+
+// --- FIM DO NOVO BLOCO ---
+
+
   try {
     // ===============================
     // COMANDO GLOBAL "SAIR" (PRIORIDADE MÁXIMA)

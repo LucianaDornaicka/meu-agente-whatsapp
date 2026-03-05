@@ -3,11 +3,11 @@ import {
   lerTarefasDaPlanilha,
   lerCategoriasDaPlanilha,
   lerTarefasPorCategoria,
-  // concluirTarefa, // Vamos integrar esta função no futuro
 } from '../services/googleSheets.js';
 
 // Exporta o objeto de estados para que o orquestrador possa gerenciá-lo.
-export const estados = {};
+// O nome "estadosTarefas" é crucial para o orquestrador diferenciar os fluxos.
+export const estados = {}; // O orquestrador vai renomear para estadosTarefas
 
 /**
  * Agente responsável por todo o fluxo de gerenciamento de tarefas.
@@ -15,18 +15,8 @@ export const estados = {};
 export async function agenteTarefas(mensagem, remetente) {
   const texto = mensagem.toLowerCase().trim();
 
-  // --------------------------------------------------------------------------
-  // 1. COMANDOS GLOBAIS (Funcionam a qualquer momento)
-  // --------------------------------------------------------------------------
-
-  // Comando para reiniciar o fluxo a qualquer momento.
-  if (["cancelar", "menu", "reiniciar", "recomeçar"].includes(texto)) {
-    delete estados[remetente];
-    return {
-      sucesso: true,
-      resposta: "🔄 Fluxo de tarefas reiniciado. Digite *tarefa* para começar de novo."
-    };
-  }
+  // O comando de sair "0" ou "cancelar" é tratado globalmente pelo orquestrador.
+  // Não precisamos mais tratá-lo aqui.
 
   // --------------------------------------------------------------------------
   // 2. INÍCIO DO FLUXO
@@ -44,9 +34,9 @@ Digite o número da opção desejada:
 1️⃣  Criar nova tarefa
 2️⃣  Ver todas as suas tarefas
 3️⃣  Ver categorias existentes
-4.  Ver tarefas por categoria
+4️⃣  Ver tarefas por categoria
 
-A qualquer momento, digite *cancelar* para sair.`
+A qualquer momento, digite *0* para sair.`
     };
   }
 
@@ -54,7 +44,6 @@ A qualquer momento, digite *cancelar* para sair.`
   // 3. MÁQUINA DE ESTADOS DA CONVERSA
   // --------------------------------------------------------------------------
 
-  // A partir daqui, o código só executa se o usuário já estiver em um fluxo.
   const estado = estados[remetente];
   let resultado;
 
@@ -103,24 +92,24 @@ A qualquer momento, digite *cancelar* para sair.`
           resultado = { sucesso: false, resposta: "❌ Opção inválida. Por favor, digite apenas o número de 1 a 4." };
           break;
       }
-      break; // Fim do case "menu"
+      break;
 
     // --- ETAPA: CRIAR TAREFA (CATEGORIA) ---
     case "pedir_categoria":
-      estado.categoria = texto; // Salva a categoria
+      estado.categoria = texto;
       estado.etapa = "pedir_descricao";
       resultado = { sucesso: true, resposta: "📝 Ótimo! Agora, qual a descrição da tarefa?" };
       break;
 
     // --- ETAPA: CRIAR TAREFA (DESCRIÇÃO) ---
     case "pedir_descricao":
-      estado.descricao = texto; // Salva a descrição
+      estado.descricao = texto;
       await adicionarTarefaNaPlanilha({
         categoria: estado.categoria,
         descricao: estado.descricao
       });
       resultado = { sucesso: true, resposta: `✅ Tarefa "${estado.descricao}" adicionada na categoria "${estado.categoria}".` };
-      delete estados[remetente]; // Finaliza o fluxo
+      delete estados[remetente];
       break;
 
     // --- ETAPA: CONSULTAR TAREFA (CATEGORIA) ---
@@ -136,13 +125,13 @@ A qualquer momento, digite *cancelar* para sair.`
         });
         resultado = { sucesso: true, resposta: listaFormatada };
       }
-      delete estados[remetente]; // Finaliza o fluxo
+      delete estados[remetente];
       break;
     }
 
     // --- ETAPA PADRÃO (Fallback) ---
     default:
-      delete estados[remetente]; // Reinicia em caso de estado inesperado
+      delete estados[remetente];
       resultado = { sucesso: false, resposta: "🤔 Ocorreu um erro no fluxo. Vamos recomeçar. Digite *tarefa*." };
       break;
   }
