@@ -4,135 +4,157 @@ import dotenv from 'dotenv';
 // Carrega as variáveis de ambiente do arquivo .env (essencial para rodar localmente)
 dotenv.config();
 
-// =================================================================================
+// --- INÍCIO DO DEBUG ---
+console.log('--- DEBUG GOOGLE SHEETS ---');
+console.log('SPREADSHEET_ID:', process.env.SPREADSHEET_ID);
+console.log('GOOGLE_SERVICE_ACCOUNT existe?', !!process.env.GOOGLE_SERVICE_ACCOUNT);
+// --- FIM DO DEBUG ---
+
+// =================================================================
 // 1. CONFIGURAÇÃO E AUTENTICAÇÃO
-// =================================================================================
+// =================================================================
 
-// ID da sua planilha. Pegue da URL do Google Sheets.
-const SPREADSHEET_ID = '1czu4cuVPrFsPhMpD4e2uoyiqRK2P70NNr0fBIxKkmvs';
-
-// Nome da aba/página onde as tarefas estão.
-const SHEET_NAME = 'Tarefas'; // Mude se o nome da sua aba for diferente
-
-// Escopos de permissão. Define o que a API pode fazer.
-const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
-
-let sheets; // Instância da API do Google Sheets
-
-try {
-  const credsString = process.env.GOOGLE_SERVICE_ACCOUNT;
-  if (!credsString ) {
-    throw new Error("A variável de ambiente GOOGLE_SERVICE_ACCOUNT não foi definida.");
-  }
-
-  const credenciais = JSON.parse(credsString);
-
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: credenciais.client_email,
-      private_key: credenciais.private_key.replace(/\\n/g, '\n'),
-    },
-    scopes: SCOPES,
-  });
-
-  sheets = google.sheets({ version: 'v4', auth });
-  console.log("Autenticação com Google Sheets realizada com sucesso.");
-
-} catch (error) {
-  console.error("ERRO CRÍTICO NA AUTENTICAÇÃO DO GOOGLE:", error.message);
-  throw new Error("Falha ao inicializar a autenticação do Google Sheets.");
-}
-
-// =================================================================================
-// 2. FUNÇÕES EXPORTADAS (AÇÕES DA PLANILHA)
-// =================================================================================
+const SPREADSHEET_ID = process.env.SPREADSHEET_ID || 'COLE_O_ID_DA_SUA_PLANILHA_AQUI';
 
 /**
- * Adiciona uma nova linha na planilha de tarefas.
- * @param {object} tarefa - Objeto com { categoria, descricao }.
+ * Configura e retorna um cliente JWT autenticado para a API do Google.
+ * @returns {Promise<import('google-auth-library').JWT>}
+ */
+async function getGoogleAuth() {
+  // Pega as credenciais da variável de ambiente.
+  const serviceAccount = process.env.GOOGLE_SERVICE_ACCOUNT;
+
+  if (!serviceAccount) {
+    console.error('ERRO: A variável de ambiente GOOGLE_SERVICE_ACCOUNT não foi definida.');
+    throw new Error('Credenciais da conta de serviço não encontradas.');
+  }
+
+  let credentials;
+  try {
+    // O Render armazena a variável como uma string, então precisamos fazer o parse.
+    credentials = JSON.parse(serviceAccount);
+  } catch (error) {
+    console.error('ERRO: Falha ao fazer o parse do JSON da GOOGLE_SERVICE_ACCOUNT.', error);
+    throw new Error('Formato inválido das credenciais da conta de serviço.');
+  }
+
+  // A chave privada vem com '\n' literais que precisam ser substituídos por quebras de linha reais.
+  if (credentials.private_key) {
+    credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+  }
+
+  const auth = new google.auth.JWT(
+    credentials.client_email,
+    null,
+    credentials.private_key,
+    ['https://www.googleapis.com/auth/spreadsheets']
+   );
+
+  return auth;
+}
+
+/**
+ * Retorna uma instância autenticada da API do Google Sheets.
+ * @returns {Promise<import('googleapis').sheets_v4.Sheets>}
+ */
+async function getSheetsService() {
+  const auth = await getGoogleAuth();
+  return google.sheets({ version: 'v4', auth });
+}
+
+
+// =================================================================
+// 2. FUNÇÕES DE MANIPULAÇÃO DA PLANILHA
+// =================================================================
+
+/**
+ * Adiciona uma nova tarefa na planilha "Tarefas".
+ * @param {{categoria: string, descricao: string}} tarefa - O objeto da tarefa.
  */
 export async function adicionarTarefaNaPlanilha(tarefa) {
   try {
+    const sheets = await getSheetsService();
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A:C`, // Escreve nas colunas A, B e C
+      range: 'Tarefas!A:C', // Adiciona na primeira linha vazia das colunas A, B, C
       valueInputOption: 'USER_ENTERED',
-      resource: {
-        values: [
-          [tarefa.categoria, tarefa.descricao, new Date().toISOString()] // Categoria, Descrição, Data
-        ],
+      requestBody: {
+        values: [[tarefa.categoria, tarefa.descricao, new Date().toISOString()]],
       },
     });
-  } catch (err) {
-    console.error('Erro ao adicionar tarefa na planilha:', err.message);
-    throw new Error('Falha ao se comunicar com a API do Google Sheets.');
+    console.log('Tarefa adicionada com sucesso na planilha.');
+  } catch (error) {
+    console.error('Erro ao adicionar tarefa na planilha:', error);
+    // Re-lança o erro para que a camada superior (agente) possa tratá-lo.
+    throw error;
   }
 }
 
 /**
- * Lê todas as tarefas da planilha, ignorando o cabeçalho.
- * @returns {Promise<Array<object>>} Uma lista de objetos de tarefa.
+ * Lê todas as tarefas da planilha.
+ * @returns {Promise<Array<{categoria: string, descricao: string}>>}
  */
 export async function lerTarefasDaPlanilha() {
   try {
+    const sheets = await getSheetsService();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A:B`, // Lê as colunas A (Categoria) e B (Descrição)
+      range: 'Tarefas!A:B', // Lê as colunas Categoria e Descrição
     });
 
-    const rows = response.data.values || [];
-    if (rows.length <= 1) return []; // Se só tem cabeçalho ou está vazia
-
-    // Pula a primeira linha (cabeçalho) e mapeia o resto para objetos
-    return rows.slice(1).map(row => ({
-      categoria: row[0] || 'Sem Categoria',
-      descricao: row[1] || 'Sem Descrição',
-    }));
-  } catch (err) {
-    console.error('Erro ao ler tarefas da planilha:', err.message);
-    throw new Error('Falha ao ler dados da planilha.');
+    const rows = response.data.values;
+    if (rows && rows.length > 1) { // Ignora o cabeçalho
+      return rows.slice(1).map(row => ({
+        categoria: row[0],
+        descricao: row[1],
+      }));
+    }
+    return [];
+  } catch (error) {
+    console.error('Erro ao ler tarefas da planilha:', error);
+    throw error;
   }
 }
 
 /**
  * Lê todas as categorias únicas da coluna A.
- * @returns {Promise<Array<string>>} Uma lista de categorias únicas.
+ * @returns {Promise<string[]>}
  */
 export async function lerCategoriasDaPlanilha() {
   try {
+    const sheets = await getSheetsService();
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET_NAME}!A:A`, // Lê apenas a coluna de categorias
+      range: 'Tarefas!A2:A', // Começa da segunda linha para ignorar o cabeçalho
     });
 
-    const rows = response.data.values || [];
-    if (rows.length <= 1) return [];
-
-    // Usa um Set para garantir categorias únicas e ignora o cabeçalho
-    const categoriasUnicas = [...new Set(rows.slice(1).flat())];
-    return categoriasUnicas.filter(cat => cat); // Remove valores vazios
-  } catch (err) {
-    console.error('Erro ao ler categorias da planilha:', err.message);
-    throw new Error('Falha ao ler dados da planilha.');
+    const rows = response.data.values;
+    if (rows) {
+      // Usa um Set para pegar apenas valores únicos e depois converte para array.
+      const categoriasUnicas = [...new Set(rows.flat())];
+      return categoriasUnicas;
+    }
+    return [];
+  } catch (error) {
+    console.error('Erro ao ler categorias da planilha:', error);
+    throw error;
   }
 }
 
 /**
- * Filtra as tarefas por uma categoria específica.
+ * Lê tarefas de uma categoria específica.
  * @param {string} categoria - A categoria para filtrar.
- * @returns {Promise<Array<object>>} Uma lista de tarefas filtradas.
+ * @returns {Promise<Array<{categoria: string, descricao: string}>>}
  */
 export async function lerTarefasPorCategoria(categoria) {
   try {
-    const todasAsTarefas = await lerTarefasDaPlanilha(); // Reutiliza a função principal
-    if (!todasAsTarefas || todasAsTarefas.length === 0) return [];
-
+    const todasAsTarefas = await lerTarefasDaPlanilha();
     // Filtra as tarefas pela categoria (ignorando maiúsculas/minúsculas)
-    return todasAsTarefas.filter(tarefa =>
-      tarefa.categoria.toLowerCase() === categoria.toLowerCase()
+    return todasAsTarefas.filter(
+      t => t.categoria.toLowerCase() === categoria.toLowerCase()
     );
-  } catch (err) {
-    console.error(`Erro ao filtrar tarefas por categoria "${categoria}":`, err.message);
-    throw new Error('Falha ao filtrar tarefas.');
+  } catch (error) {
+    console.error(`Erro ao ler tarefas da categoria "${categoria}":`, error);
+    throw error;
   }
 }
