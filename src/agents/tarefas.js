@@ -29,7 +29,7 @@ export async function agenteTarefas(mensagem, remetente) {
           resultado = { sucesso: true, resposta: "📂 Qual a categoria da tarefa? (Ex: Mercado, Trabalho)" };
           break;
         case "2": {
-          const tarefas = await lerTarefasDaPlanilha();
+          const tarefas = await lerTarefasDaPlanilha(remetente);
           if (!tarefas || tarefas.length === 0) {
             resultado = { sucesso: true, resposta: "📭 Você ainda não tem nenhuma tarefa cadastrada." };
           } else {
@@ -41,7 +41,7 @@ export async function agenteTarefas(mensagem, remetente) {
           break;
         }
         case "3": {
-          const categorias = await lerCategoriasDaPlanilha();
+          const categorias = await lerCategoriasDaPlanilha(remetente);
           if (!categorias || categorias.length === 0) {
             resultado = { sucesso: true, resposta: "📭 Nenhuma categoria encontrada." };
           } else {
@@ -68,14 +68,18 @@ export async function agenteTarefas(mensagem, remetente) {
 
     case "pedir_descricao":
       estado.descricao = texto;
-      await adicionarTarefaNaPlanilha({ categoria: estado.categoria, descricao: estado.descricao });
+      await adicionarTarefaNaPlanilha({
+        usuario: remetente,
+        categoria: estado.categoria,
+        descricao: estado.descricao
+      });
       resultado = { sucesso: true, resposta: `✅ Tarefa "${estado.descricao}" adicionada na categoria "${estado.categoria}".` };
       delete estados[remetente];
       break;
 
     case "pedir_categoria_consulta": {
       const categoriaConsultada = texto;
-      const tarefas = await lerTarefasPorCategoria(categoriaConsultada);
+      const tarefas = await lerTarefasPorCategoria(remetente, categoriaConsultada);
       if (!tarefas || tarefas.length === 0) {
         resultado = { sucesso: true, resposta: `📭 Nenhuma tarefa encontrada na categoria "${categoriaConsultada}".` };
       } else {
