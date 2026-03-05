@@ -5,64 +5,41 @@ import {
   lerTarefasPorCategoria,
 } from '../services/googleSheets.js';
 
-// Exporta o objeto de estados. O orquestrador vai renomeá-lo para "estadosTarefas".
-// Dentro deste arquivo, ele se chama apenas "estados".
 export const estados = {};
 
-/**
- * Agente responsável por todo o fluxo de gerenciamento de tarefas.
- */
 export async function agenteTarefas(mensagem, remetente) {
   const texto = mensagem.toLowerCase().trim();
 
-  // O comando de sair "0" é tratado globalmente pelo orquestrador.
-
-  // --- INÍCIO DO FLUXO ---
   if (!estados[remetente]) {
     estados[remetente] = { etapa: "menu" };
     return {
       sucesso: true,
-      resposta: `📋 *Assistente de Tarefas*
-
-Digite o número da opção desejada:
-
-1️⃣  Criar nova tarefa
-2️⃣  Ver todas as suas tarefas
-3️⃣  Ver categorias existentes
-4️⃣  Ver tarefas por categoria
-
-A qualquer momento, digite *0* para sair.`
+      resposta: `📋 *Assistente de Tarefas*\n\nDigite o número da opção desejada:\n\n1️⃣  Criar nova tarefa\n2️⃣  Ver todas as suas tarefas\n3️⃣  Ver categorias existentes\n4️⃣  Ver tarefas por categoria\n\nA qualquer momento, digite *0* para sair.`
     };
   }
 
-  // --- MÁQUINA DE ESTADOS DA CONVERSA ---
   const estado = estados[remetente];
   let resultado;
 
   switch (estado.etapa) {
-
     case "menu":
       switch (texto) {
         case "1":
           estado.etapa = "pedir_categoria";
           resultado = { sucesso: true, resposta: "📂 Qual a categoria da tarefa? (Ex: Mercado, Trabalho)" };
           break;
-
         case "2": {
           const tarefas = await lerTarefasDaPlanilha();
           if (!tarefas || tarefas.length === 0) {
             resultado = { sucesso: true, resposta: "📭 Você ainda não tem nenhuma tarefa cadastrada." };
           } else {
             let listaFormatada = "📋 *Suas tarefas:*\n\n";
-            tarefas.forEach((t, i) => {
-              listaFormatada += `${i + 1}. [${t.categoria}] ${t.descricao}\n`;
-            });
+            tarefas.forEach((t, i) => { listaFormatada += `${i + 1}. [${t.categoria}] ${t.descricao}\n`; });
             resultado = { sucesso: true, resposta: listaFormatada };
           }
           delete estados[remetente];
           break;
         }
-
         case "3": {
           const categorias = await lerCategoriasDaPlanilha();
           if (!categorias || categorias.length === 0) {
@@ -73,12 +50,10 @@ A qualquer momento, digite *0* para sair.`
           delete estados[remetente];
           break;
         }
-
         case "4":
           estado.etapa = "pedir_categoria_consulta";
           resultado = { sucesso: true, resposta: "📂 Qual categoria você deseja consultar?" };
           break;
-
         default:
           resultado = { sucesso: false, resposta: "❌ Opção inválida. Por favor, digite apenas o número de 1 a 4." };
           break;
@@ -93,10 +68,7 @@ A qualquer momento, digite *0* para sair.`
 
     case "pedir_descricao":
       estado.descricao = texto;
-      await adicionarTarefaNaPlanilha({
-        categoria: estado.categoria,
-        descricao: estado.descricao
-      });
+      await adicionarTarefaNaPlanilha({ categoria: estado.categoria, descricao: estado.descricao });
       resultado = { sucesso: true, resposta: `✅ Tarefa "${estado.descricao}" adicionada na categoria "${estado.categoria}".` };
       delete estados[remetente];
       break;
@@ -108,9 +80,7 @@ A qualquer momento, digite *0* para sair.`
         resultado = { sucesso: true, resposta: `📭 Nenhuma tarefa encontrada na categoria "${categoriaConsultada}".` };
       } else {
         let listaFormatada = `📂 *Tarefas da categoria "${categoriaConsultada}":*\n\n`;
-        tarefas.forEach((t, i) => {
-          listaFormatada += `${i + 1}. ${t.descricao}\n`;
-        });
+        tarefas.forEach((t, i) => { listaFormatada += `${i + 1}. ${t.descricao}\n`; });
         resultado = { sucesso: true, resposta: listaFormatada };
       }
       delete estados[remetente];

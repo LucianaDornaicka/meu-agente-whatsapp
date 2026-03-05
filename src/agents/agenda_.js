@@ -38,7 +38,6 @@ export async function agenteAgenda(mensagem, remetente) {
       }
       break;
 
-    // --- FLUXO 1: CRIAR COMPROMISSO ---
     case "pedir_data":
       if (!/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) {
         resultado = { sucesso: false, resposta: "Formato de data inválido. Por favor, use DD/MM/AAAA." };
@@ -103,7 +102,6 @@ export async function agenteAgenda(mensagem, remetente) {
       }
       break;
 
-    // --- FLUXO 2: VER COMPROMISSOS ---
     case "pedir_data_consulta": {
       if (!/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) {
         resultado = { sucesso: false, resposta: "Formato de data inválido. Use DD/MM/AAAA." };
@@ -112,7 +110,6 @@ export async function agenteAgenda(mensagem, remetente) {
       const [dia2, mes2, ano2] = texto.split('/');
       const dataFormatada2 = `${ano2}-${mes2}-${dia2}`;
       const link2 = `https://calendar.google.com/calendar/r/day/${ano2}/${mes2}/${dia2}`;
-
       try {
         const eventos = await listarEventosDoDia(dataFormatada2 );
         if (eventos.length === 0) {
@@ -130,12 +127,10 @@ export async function agenteAgenda(mensagem, remetente) {
         console.error("Erro ao buscar eventos:", error);
         resultado = { sucesso: false, resposta: "Não consegui consultar os eventos. Tente novamente." };
       }
-
       delete estados[remetente];
       break;
     }
 
-    // --- FLUXO 3: LINK DIRETO ---
     case "pedir_data_link": {
       if (!/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) {
         resultado = { sucesso: false, resposta: "Formato de data inválido. Use DD/MM/AAAA." };
