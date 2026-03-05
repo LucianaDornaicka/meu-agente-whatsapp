@@ -31,7 +31,10 @@ async function getGoogleAuth() {
   }
 
   // Garante que a private_key tem quebras de linha reais (não literais \n)
-  const privateKey = credentials.private_key.replace(/\\n/g, '\n');
+  const privateKey = credentials.private_key.includes('\\n')
+    ? credentials.private_key.replace(/\\n/g, '\n')
+    : credentials.private_key;
+
 
   const auth = new google.auth.GoogleAuth({
     credentials: {

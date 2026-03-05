@@ -22,7 +22,10 @@ async function getGoogleAuth() {
   const auth = new google.auth.GoogleAuth({
     credentials: {
       client_email: credentials.client_email,
-      private_key: credentials.private_key.replace(/\\n/g, '\n'),
+      private_key: credentials.private_key.includes('\\n') 
+      ? credentials.private_key.replace(/\\n/g, '\n') 
+      : credentials.private_key,
+
     },
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   } );
