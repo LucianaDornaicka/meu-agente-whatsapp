@@ -11,12 +11,10 @@ dotenv.config();
 const CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || 'primary';
 
 /**
- * Configura e retorna um cliente JWT autenticado para a API do Google.
- * Esta função é a chave para a autenticação correta no Render.
- * @returns {Promise<import('google-auth-library').JWT>}
+ * Configura e retorna um cliente autenticado para a API do Google.
+ * Usa GoogleAuth com credentials diretas para evitar problemas de formatação da private_key.
  */
 async function getGoogleAuth() {
-  // Pega as credenciais da variável de ambiente.
   const serviceAccount = process.env.GOOGLE_SERVICE_ACCOUNT;
 
   if (!serviceAccount) {
@@ -26,31 +24,28 @@ async function getGoogleAuth() {
 
   let credentials;
   try {
-    // O Render armazena a variável como uma string, então precisamos fazer o parse.
     credentials = JSON.parse(serviceAccount);
   } catch (error) {
     console.error('ERRO CALENDAR: Falha ao fazer o parse do JSON da GOOGLE_SERVICE_ACCOUNT.', error);
     throw new Error('Formato inválido das credenciais da conta de serviço.');
   }
 
-  // A chave privada vem com '\n' literais que precisam ser substituídos por quebras de linha reais.
-  if (credentials.private_key) {
-    credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
-  }
+  // Garante que a private_key tem quebras de linha reais (não literais \n)
+  const privateKey = credentials.private_key.replace(/\\n/g, '\n');
 
-  const auth = new google.auth.JWT(
-    credentials.client_email,
-    null,
-    credentials.private_key,
-    ['https://www.googleapis.com/auth/calendar'] // Escopo para o Calendar
-   );
+  const auth = new google.auth.GoogleAuth({
+    credentials: {
+      client_email: credentials.client_email,
+      private_key: privateKey,
+    },
+    scopes: ['https://www.googleapis.com/auth/calendar'],
+  } );
 
   return auth;
 }
 
 /**
  * Retorna uma instância autenticada da API do Google Calendar.
- * @returns {Promise<import('googleapis').calendar_v3.Calendar>}
  */
 async function getCalendarService() {
   const auth = await getGoogleAuth();
@@ -64,11 +59,6 @@ async function getCalendarService() {
 
 /**
  * Adiciona um novo evento na agenda.
- * @param {object} eventDetails - Detalhes do evento.
- * @param {string} eventDetails.summary - O título do evento.
- * @param {string} eventDetails.description - A descrição do evento.
- * @param {string} eventDetails.startDateTime - Data e hora de início (formato ISO, ex: '2024-08-15T10:00:00-03:00').
- * @param {string} eventDetails.endDateTime - Data e hora de fim (formato ISO, ex: '2024-08-15T11:00:00-03:00').
  */
 export async function adicionarEventoNaAgenda(eventDetails) {
   try {
