@@ -9,8 +9,8 @@ const authToken = process.env.TWILIO_AUTH_TOKEN;
 // -------------------------------------------------------------------
 // MUDANÇA CRÍTICA: Coloque seu Messaging Service SID diretamente aqui
 // -------------------------------------------------------------------
-const messagingServiceSid = "MGxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"; // <-- COLE O SEU SID AQUI
-
+const messagingServiceSid = "MG544dbd674c7a43d3ffefa82d2470d27b"; // <-- COLE O SEU SID AQUI
+                             
 const client = twilio(accountSid, authToken);
 
 /**
