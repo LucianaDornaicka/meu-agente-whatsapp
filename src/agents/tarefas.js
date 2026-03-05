@@ -1,230 +1,151 @@
 import {
-  adicionarTarefa,
-  listarTarefas,
-  concluirTarefa,
-  listarCategorias,
-  listarPorCategoria
+  adicionarTarefaNaPlanilha,
+  lerTarefasDaPlanilha,
+  lerCategoriasDaPlanilha,
+  lerTarefasPorCategoria,
+  // concluirTarefa, // Vamos integrar esta função no futuro
 } from '../services/googleSheets.js';
 
-export const estadosTarefas = {};
+// Exporta o objeto de estados para que o orquestrador possa gerenciá-lo.
+export const estados = {};
 
+/**
+ * Agente responsável por todo o fluxo de gerenciamento de tarefas.
+ */
 export async function agenteTarefas(mensagem, remetente) {
-
   const texto = mensagem.toLowerCase().trim();
 
-  // 🔄 Reiniciar fluxo
-  if (
-    texto === "cancelar" ||
-    texto === "menu" ||
-    texto === "reiniciar" ||
-    texto === "recomeçar"
-  ) {
-    delete estadosTarefas[remetente];
+  // --------------------------------------------------------------------------
+  // 1. COMANDOS GLOBAIS (Funcionam a qualquer momento)
+  // --------------------------------------------------------------------------
 
+  // Comando para reiniciar o fluxo a qualquer momento.
+  if (["cancelar", "menu", "reiniciar", "recomeçar"].includes(texto)) {
+    delete estados[remetente];
     return {
       sucesso: true,
-      resposta: "🔄 Fluxo reiniciado. Digite *tarefa* para começar novamente."
+      resposta: "🔄 Fluxo de tarefas reiniciado. Digite *tarefa* para começar de novo."
     };
   }
 
-  // ===============================
-  // INICIAR MENU
-  // ===============================
-  if (texto.includes("tarefa") && !estadosTarefas[remetente]) {
+  // --------------------------------------------------------------------------
+  // 2. INÍCIO DO FLUXO
+  // --------------------------------------------------------------------------
 
-    estadosTarefas[remetente] = { etapa: "menu" };
-
+  // Se o usuário digita "tarefa" e não está em um fluxo, inicia o menu.
+  if (!estados[remetente]) {
+    estados[remetente] = { etapa: "menu" };
     return {
       sucesso: true,
-      resposta:
-`📋 Assistente de Tarefas
+      resposta: `📋 *Assistente de Tarefas*
 
-Digite o número da opção:
+Digite o número da opção desejada:
 
-1️⃣ Criar tarefa
-2️⃣ Ver suas tarefas
-3️⃣ Ver quais categorias existem
-4️⃣ Ver tarefas por categoria
-0️⃣ Recomeçar`
+1️⃣  Criar nova tarefa
+2️⃣  Ver todas as suas tarefas
+3️⃣  Ver categorias existentes
+4.  Ver tarefas por categoria
+
+A qualquer momento, digite *cancelar* para sair.`
     };
   }
 
-  // ===============================
-  // FLUXO CONVERSACIONAL
-  // ===============================
-  if (estadosTarefas[remetente]) {
+  // --------------------------------------------------------------------------
+  // 3. MÁQUINA DE ESTADOS DA CONVERSA
+  // --------------------------------------------------------------------------
 
-    const estado = estadosTarefas[remetente];
+  // A partir daqui, o código só executa se o usuário já estiver em um fluxo.
+  const estado = estados[remetente];
+  let resultado;
 
-    // ===============================
-    // MENU
-    // ===============================
-    if (estado.etapa === "menu") {
+  switch (estado.etapa) {
 
-      if (texto === "0") {
-        delete estadosTarefas[remetente];
-        return {
-          sucesso: true,
-          resposta: "🔄 Fluxo reiniciado. Digite *tarefa* para começar novamente."
-        };
-      }
+    // --- ETAPA: MENU PRINCIPAL ---
+    case "menu":
+      switch (texto) {
+        case "1":
+          estado.etapa = "pedir_categoria";
+          resultado = { sucesso: true, resposta: "📂 Qual a categoria da tarefa? (Ex: Mercado, Trabalho)" };
+          break;
 
-      if (texto === "1") {
-        estado.etapa = "categoria";
-        return {
-          sucesso: true,
-          resposta: "📂 Qual a categoria da tarefa?"
-        };
-      }
-
-      if (texto === "2") {
-
-        delete estadosTarefas[remetente];
-
-        const tarefas = await listarTarefas(remetente);
-
-        if (!tarefas.length) {
-          return {
-            sucesso: true,
-            resposta: "📭 Você não tem tarefas cadastradas."
-          };
+        case "2": {
+          const tarefas = await lerTarefasDaPlanilha();
+          if (!tarefas || tarefas.length === 0) {
+            resultado = { sucesso: true, resposta: "📭 Você ainda não tem nenhuma tarefa cadastrada." };
+          } else {
+            let listaFormatada = "📋 *Suas tarefas:*\n\n";
+            tarefas.forEach((t, i) => {
+              listaFormatada += `${i + 1}. [${t.categoria}] ${t.descricao}\n`;
+            });
+            resultado = { sucesso: true, resposta: listaFormatada };
+          }
+          delete estados[remetente]; // Finaliza o fluxo
+          break;
         }
 
-        let resposta = "📋 Suas tarefas:\n\n";
-
-        tarefas.forEach((tarefa, index) => {
-          const status = tarefa.concluida ? "✅" : "⬜";
-          resposta += `${index + 1}. ${status} [${tarefa.categoria}] ${tarefa.descricao}\n`;
-        });
-
-        return {
-          sucesso: true,
-          resposta
-        };
-      }
-
-      if (texto === "3") {
-
-        delete estadosTarefas[remetente];
-
-        const categorias = await listarCategorias(remetente);
-
-        if (!categorias.length) {
-          return {
-            sucesso: true,
-            resposta: "📭 Você ainda não tem categorias."
-          };
+        case "3": {
+          const categorias = await lerCategoriasDaPlanilha();
+          if (!categorias || categorias.length === 0) {
+            resultado = { sucesso: true, resposta: "📭 Nenhuma categoria encontrada." };
+          } else {
+            resultado = { sucesso: true, resposta: "📂 *Categorias existentes:*\n\n- " + categorias.join("\n- ") };
+          }
+          delete estados[remetente]; // Finaliza o fluxo
+          break;
         }
 
-        return {
-          sucesso: true,
-          resposta: "📂 Categorias existentes:\n\n" + categorias.join("\n")
-        };
+        case "4":
+          estado.etapa = "pedir_categoria_consulta";
+          resultado = { sucesso: true, resposta: "📂 Qual categoria você deseja consultar?" };
+          break;
+
+        default:
+          resultado = { sucesso: false, resposta: "❌ Opção inválida. Por favor, digite apenas o número de 1 a 4." };
+          break;
       }
+      break; // Fim do case "menu"
 
-      if (texto === "4") {
-        estado.etapa = "categoriaConsulta";
-        return {
-          sucesso: true,
-          resposta: "📂 Qual categoria deseja consultar?"
-        };
-      }
+    // --- ETAPA: CRIAR TAREFA (CATEGORIA) ---
+    case "pedir_categoria":
+      estado.categoria = texto; // Salva a categoria
+      estado.etapa = "pedir_descricao";
+      resultado = { sucesso: true, resposta: "📝 Ótimo! Agora, qual a descrição da tarefa?" };
+      break;
 
-      return {
-        sucesso: false,
-        resposta: "❌ Digite apenas 1, 2, 3 ou 4."
-      };
-    }
-
-    // ===============================
-    // CONSULTAR POR CATEGORIA
-    // ===============================
-    if (estado.etapa === "categoriaConsulta") {
-
-      delete estadosTarefas[remetente];
-
-      const tarefas = await listarPorCategoria(remetente, texto);
-
-      if (!tarefas.length) {
-        return {
-          sucesso: true,
-          resposta: `📭 Nenhuma tarefa encontrada na categoria "${texto}".`
-        };
-      }
-
-      let resposta = `📂 Tarefas da categoria "${texto}":\n\n`;
-
-      tarefas.forEach(t => {
-        const status =
-          t[4] === "Executada" || t[4] === true || t[4] === "TRUE"
-            ? "✅"
-            : "⬜";
-
-        resposta += `${status} ${t[3]}\n`;
+    // --- ETAPA: CRIAR TAREFA (DESCRIÇÃO) ---
+    case "pedir_descricao":
+      estado.descricao = texto; // Salva a descrição
+      await adicionarTarefaNaPlanilha({
+        categoria: estado.categoria,
+        descricao: estado.descricao
       });
+      resultado = { sucesso: true, resposta: `✅ Tarefa "${estado.descricao}" adicionada na categoria "${estado.categoria}".` };
+      delete estados[remetente]; // Finaliza o fluxo
+      break;
 
-      return { sucesso: true, resposta };
+    // --- ETAPA: CONSULTAR TAREFA (CATEGORIA) ---
+    case "pedir_categoria_consulta": {
+      const categoriaConsultada = texto;
+      const tarefas = await lerTarefasPorCategoria(categoriaConsultada);
+      if (!tarefas || tarefas.length === 0) {
+        resultado = { sucesso: true, resposta: `📭 Nenhuma tarefa encontrada na categoria "${categoriaConsultada}".` };
+      } else {
+        let listaFormatada = `📂 *Tarefas da categoria "${categoriaConsultada}":*\n\n`;
+        tarefas.forEach((t, i) => {
+          listaFormatada += `${i + 1}. ${t.descricao}\n`;
+        });
+        resultado = { sucesso: true, resposta: listaFormatada };
+      }
+      delete estados[remetente]; // Finaliza o fluxo
+      break;
     }
 
-    // ===============================
-    // CRIAR TAREFA
-    // ===============================
-    if (estado.etapa === "categoria") {
-      estado.categoria = texto;
-      estado.etapa = "descricao";
-
-      return {
-        sucesso: true,
-        resposta: "📝 Qual a descrição da tarefa?"
-      };
-    }
-
-    if (estado.etapa === "descricao") {
-
-      await adicionarTarefa(remetente, estado.categoria, texto);
-
-      delete estadosTarefas[remetente];
-
-      return {
-        sucesso: true,
-        resposta: `✅ Tarefa adicionada na categoria "${estado.categoria}"`
-      };
-    }
+    // --- ETAPA PADRÃO (Fallback) ---
+    default:
+      delete estados[remetente]; // Reinicia em caso de estado inesperado
+      resultado = { sucesso: false, resposta: "🤔 Ocorreu um erro no fluxo. Vamos recomeçar. Digite *tarefa*." };
+      break;
   }
 
-  // ===============================
-  // CONCLUIR TAREFA
-  // ===============================
-  if (texto.includes("concluir")) {
-
-    const match = texto.match(/\d+/);
-
-    if (!match) {
-      return {
-        sucesso: false,
-        resposta: "❌ Informe o número da tarefa. Ex: concluir 3"
-      };
-    }
-
-    const id = match[0];
-
-    const ok = await concluirTarefa(id);
-
-    if (!ok) {
-      return {
-        sucesso: false,
-        resposta: "❌ Tarefa não encontrada."
-      };
-    }
-
-    return {
-      sucesso: true,
-      resposta: "✅ Tarefa marcada como Executada."
-    };
-  }
-
-  return {
-    sucesso: false,
-    resposta: "❌ Não entendi o comando de tarefas."
-  };
+  return resultado;
 }

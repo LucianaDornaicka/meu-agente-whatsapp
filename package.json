@@ -5,11 +5,12 @@
   "type": "module",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "node --watch src"
+    "start": "node --env-file=.env src/index.js",
+    "dev": "node --watch src/index.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
+    "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",
     "express": "^4.22.1",
     "googleapis": "^171.4.0",

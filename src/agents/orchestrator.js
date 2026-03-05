@@ -1,59 +1,66 @@
 import { sendMessage } from '../services/twilio.js';
-import { agenteAgenda, estados } from './agenda_.js';
-import { agenteTarefas, estadosTarefas } from './tarefas.js';
+import { agenteAgenda, estados as estadosAgenda } from './agenda_.js';
+import { agenteTarefas, estados as estadosTarefas } from './tarefas.js';
+
+// Objeto para manter o estado de cada remetente
+export const estados = {};
 
 export async function handle(mensagem, remetente) {
-
-  console.log("Handle iniciado com mensagem:", mensagem);
-
   const texto = mensagem?.toLowerCase().trim() || "";
   let resultado;
 
-  // ===============================
-  // 🗂 AGENTE DE TAREFAS
-  // ===============================
-  if (texto.includes("tarefa")) {
+  try {
+    // ===============================
+    // COMANDO GLOBAL: REINICIAR
+    // ===============================
+    if (texto === "tarefa" || texto === "tarefas") {
+      delete estadosTarefas[remetente];
+      delete estadosAgenda[remetente]; // Garante que saia de qualquer fluxo
+      resultado = await agenteTarefas(mensagem, remetente);
+    }
+    // ===============================
+    // INICIAR AGENDA
+    // ===============================
+    else if (texto.includes("agenda")) {
+        delete estadosTarefas[remetente];
+        delete estadosAgenda[remetente];
+        resultado = await agenteAgenda(mensagem, remetente);
+    }
+    // ===============================
+    // FLUXO ATIVO: TAREFAS
+    // ===============================
+    else if (estadosTarefas[remetente]) {
+      resultado = await agenteTarefas(mensagem, remetente);
+    }
+    // ===============================
+    // FLUXO ATIVO: AGENDA
+    // ===============================
+    else if (estadosAgenda[remetente]) {
+      resultado = await agenteAgenda(mensagem, remetente);
+    }
+    // ===============================
+    // COMANDO DESCONHECIDO
+    // ===============================
+    else {
+      resultado = {
+        sucesso: false,
+        resposta: `❌ Comando não reconhecido.
 
-    // 🔄 sempre limpa qualquer fluxo anterior
-    delete estadosTarefas[remetente];
-
-    resultado = await agenteTarefas(mensagem, remetente);
-  }
-  else if (estadosTarefas[remetente]) {
-    resultado = await agenteTarefas(mensagem, remetente);
-  }
-
-  // ===============================
-  // 📅 AGENTE DE AGENDA
-  // ===============================
-  else if (
-    estados[remetente] !== undefined ||
-    texto.includes("agenda") ||
-    texto.includes("reuni") ||
-    texto.includes("compromisso") ||
-    texto.includes("tenho") ||
-    texto.includes("quais") ||
-    texto.includes("cancelar") ||
-    texto.includes("listar") ||
-    texto.includes("@") ||
-    texto.includes("agendar") ||
-    texto.includes("criar") ||
-    texto.includes("marcar")
-  ) {
-    resultado = await agenteAgenda(mensagem, remetente);
-  }
-
-  // ===============================
-  // FALLBACK
-  // ===============================
-  else {
+Digite:
+*tarefa* → para abrir tarefas
+*agenda* → para ver compromissos`
+      };
+    }
+  } catch (erro) {
+    console.error("Erro no orchestrator:", erro);
     resultado = {
-      sucesso: true,
-      resposta: "🤖 Estou funcionando! Mas esse tipo de solicitação ainda não foi implementado."
+      sucesso: false,
+      resposta: "⚠️ Ocorreu um erro ao processar sua solicitação."
     };
   }
 
-  await sendMessage(remetente, resultado.resposta);
-
-  console.log(`[Orquestrador] Resposta enviada para ${remetente}: ${resultado.resposta}`);
+  // Envia a resposta apenas se houver uma.
+  if (resultado && resultado.resposta) {
+    await sendMessage(remetente, resultado.resposta);
+  }
 }

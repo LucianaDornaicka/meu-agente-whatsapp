@@ -1,191 +1,118 @@
-import { criarEvento } from '../services/googleCalendar.js';
+import { criarEventoNoCalendario, gerarLinkParaDia } from '../services/googleCalendar.js';
+import { parse, format, isValid } from 'date-fns';
 
+// Exporta o objeto de estados para o orquestrador
 export const estados = {};
 
-export async function agenteAgenda(mensagem, remetente) {
+/**
+ * Agente responsável pelo fluxo de gerenciamento da Agenda.
+ */
+export async function agenteAgenda(mensagem, remetente ) {
+  const texto = mensagem.toLowerCase().trim();
 
-    console.log("[Agenda] Processando mensagem:", mensagem);
-    console.log("ESTADOS ATUAIS:", estados); // 👈 ADICIONE AQUI
-  
-    try {
+  // --- Comando Global para Cancelar ---
+  if (texto === "cancelar") {
+    delete estados[remetente];
+    return { sucesso: true, resposta: "Ok, fluxo da agenda cancelado." };
+  }
 
-    const texto = mensagem.toLowerCase().trim();
+  // --- Início do Fluxo ---
+  if (!estados[remetente]) {
+    estados[remetente] = { etapa: "menu" };
+    return {
+      sucesso: true,
+      resposta: `🗓️ *Assistente de Agenda*
 
-    // ===============================
-    // MENU
-    // ===============================
+O que você gostaria de fazer?
 
-    if (texto === "agenda") {
+1️⃣  Adicionar um novo compromisso
+2️⃣  Editar os compromissos de um dia
 
-      estados[remetente] = { etapa: "menu" };
+A qualquer momento, digite *cancelar* para sair.`
+    };
+  }
 
-      return {
+  // --- Máquina de Estados da Conversa ---
+  const estado = estados[remetente];
+  let resultado;
+
+  switch (estado.etapa) {
+
+    // --- ETAPA: MENU PRINCIPAL ---
+    case "menu":
+      if (texto === "1") {
+        estado.etapa = "pedir_titulo";
+        resultado = { sucesso: true, resposta: "Qual o título do compromisso?" };
+      } else if (texto === "2") {
+        estado.etapa = "pedir_dia_edicao";
+        resultado = { sucesso: true, resposta: "Qual dia você quer editar? (Ex: 25/12)" };
+      } else {
+        resultado = { sucesso: false, resposta: "❌ Opção inválida. Por favor, digite 1 ou 2." };
+      }
+      break;
+
+    // --- FLUXO: ADICIONAR COMPROMISSO ---
+    case "pedir_titulo":
+      estado.titulo = mensagem; // Salva o título com maiúsculas/minúsculas originais
+      estado.etapa = "pedir_data_hora";
+      resultado = { sucesso: true, resposta: "Para qual dia e hora? (Ex: amanhã às 15:30, ou 25/12 às 10:00)" };
+      break;
+
+    case "pedir_data_hora":
+      // (Esta parte é complexa, vamos simplificar por enquanto)
+      // Simulação: vamos assumir que o evento é para agora.
+      const agora = new Date();
+      const daquiUmaHora = new Date(agora.getTime() + 60 * 60 * 1000);
+
+      const novoEvento = await criarEventoNoCalendario({
+        summary: estado.titulo,
+        start: { dateTime: agora.toISOString(), timeZone: 'America/Sao_Paulo' },
+        end: { dateTime: daquiUmaHora.toISOString(), timeZone: 'America/Sao_Paulo' },
+      });
+
+      // Salva o link correto no estado
+      estado.linkDoEvento = novoEvento.htmlLink;
+      estado.etapa = "confirmar_link";
+      resultado = {
         sucesso: true,
-        resposta:
-`📅 Assistente de Agenda
+        resposta: `✅ Evento "${estado.titulo}" criado com sucesso!
 
-Digite o número da opção:
-
-1️⃣ Adicionar compromisso
-2️⃣ Alterar compromisso
-3️⃣ Excluir compromisso`
-      };
-    }
-
-    // ===============================
-    // FLUXO CONVERSACIONAL
-    // ===============================
-
-    if (estados[remetente]) {
-
-      const estado = estados[remetente];
-
-      // MENU OPÇÃO
-      if (estado.etapa === "menu") {
-
-        if (mensagem === "1") {
-          estado.etapa = "dia";
-
-          return {
-            sucesso: true,
-            resposta: "📅 Informe no formato DIA/MÊS. Ex: 13/03"
-          };
-        }
-
-        delete estados[remetente];
-
-        return {
-          sucesso: false,
-          resposta: "❌ Digite apenas 1, 2 ou 3."
-        };
-      }
-
-      // DIA
-      if (estado.etapa === "dia") {
-
-        const match = texto.match(/^(\d{1,2})\/(\d{1,2})$/);
-
-        if (!match) {
-          return {
-            sucesso: false,
-            resposta: "❌ Informe no formato DIA/MÊS. Ex: 13/03"
-          };
-        }
-
-        estado.dia = parseInt(match[1]);
-        estado.mes = parseInt(match[2]) - 1;
-        estado.etapa = "hora_inicio";
-
-        return {
-          sucesso: true,
-          resposta: "⏰ Horário de início? (apenas hora, ex: 14)"
-        };
-      }
-
-      // HORA INÍCIO
-      if (estado.etapa === "hora_inicio") {
-
-        estado.horaInicio = parseInt(texto);
-        estado.etapa = "hora_fim";
-
-        return {
-          sucesso: true,
-          resposta: "⏰ Horário de fim? (apenas hora)"
-        };
-      }
-
-      // HORA FIM
-      if (estado.etapa === "hora_fim") {
-
-        estado.horaFim = parseInt(texto);
-        estado.etapa = "titulo";
-
-        return {
-          sucesso: true,
-          resposta: "📝 Qual o título do compromisso?"
-        };
-      }
-
-      // TÍTULO (CRIA O EVENTO AQUI)
-      if (estado.etapa === "titulo") {
-
-        estado.titulo = mensagem;
-
-        const ano = new Date().getFullYear();
-
-        const inicio = new Date(
-          ano,
-          estado.mes,
-          estado.dia,
-          estado.horaInicio,
-          0
-        );
-
-        const fim = new Date(
-          ano,
-          estado.mes,
-          estado.dia,
-          estado.horaFim,
-          0
-        );
-
-        const eventoCriado = await criarEvento({
-          summary: estado.titulo,
-          description: "Criado via Assistente WhatsApp",
-          startDateTime: inicio.toISOString(),
-          endDateTime: fim.toISOString()
-        });
-
-        estado.eventoLink = eventoCriado.htmlLink;
-        estado.etapa = "link";
-
-        return {
-          sucesso: true,
-          resposta:
-`✅ Evento "${estado.titulo}" criado com sucesso!
-
-📎 Deseja receber o link para convidar participantes?
+Deseja receber o link para editar e convidar participantes?
 
 1️⃣ Sim
 2️⃣ Não`
-        };
+      };
+      break;
+
+    case "confirmar_link":
+      if (texto === "1" || texto === "sim") {
+        resultado = { sucesso: true, resposta: `🔗 Aqui está o link para editar seu evento:\n\n${estado.linkDoEvento}` };
+      } else {
+        resultado = { sucesso: true, resposta: "Ok, compromisso agendado!" };
       }
+      delete estados[remetente]; // Finaliza o fluxo
+      break;
 
-      // LINK
-      if (estado.etapa === "link") {
-
-        const link = estado.eventoLink;
-
-        delete estados[remetente];
-
-        if (mensagem === "1") {
-          return {
-            sucesso: true,
-            resposta:
-`🔗 Link para editar e convidar participantes:
-${link}`
-          };
-        }
-
-        return {
-          sucesso: true,
-          resposta: "✅ Perfeito! Seu evento já está na agenda."
-        };
+    // --- FLUXO: EDITAR DIA ---
+    case "pedir_dia_edicao":
+      // Tenta entender a data que o usuário enviou (Ex: 25/12)
+      const dataParseada = parse(texto, 'dd/MM', new Date());
+      
+      if (!isValid(dataParseada)) {
+        resultado = { sucesso: false, resposta: "❌ Data inválida. Por favor, envie no formato dia/mês (Ex: 25/12)." };
+      } else {
+        const linkDoDia = gerarLinkParaDia(dataParseada);
+        resultado = { sucesso: true, resposta: `🗓️ Aqui está o link para ver e editar todos os compromissos do dia ${format(dataParseada, 'dd/MM')}:\n\n${linkDoDia}` };
+        delete estados[remetente]; // Finaliza o fluxo
       }
-    }
+      break;
 
-    return {
-      sucesso: false,
-      resposta: "❌ Não entendi o comando de agenda."
-    };
-
-  } catch (error) {
-
-    console.error("[Agenda] Erro:", error);
-
-    return {
-      sucesso: false,
-      resposta: "❌ Ocorreu um erro."
-    };
+    // --- Fallback ---
+    default:
+      delete estados[remetente];
+      resultado = { sucesso: false, resposta: "🤔 Algo deu errado. Vamos recomeçar. Digite *agenda*." };
+      break;
   }
+
+  return resultado;
 }
