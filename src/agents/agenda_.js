@@ -13,17 +13,9 @@ export async function agenteAgenda(mensagem, remetente) {
   // --- Comando Global para Cancelar ---
   if (texto === "cancelar") {
     delete estados[remetente];
-    return { sucesso: true, resposta: "Ok, fluxo da agenda cancelado." };
-  }
-
-  // --- Início do Fluxo ---
-  if (!estados[remetente]) {
-    estados[remetente] = { etapa: "menu" };
     return {
       sucesso: true,
       resposta: `🗓️ *Assistente de Agenda*
-
-resposta: `🗓️ *Assistente de Agenda*
 
 O que você gostaria de fazer?
 
@@ -31,7 +23,6 @@ O que você gostaria de fazer?
 2️⃣  Editar os compromissos de um dia
 
 A qualquer momento, digite *0* para sair.`
-`
     };
   }
 
