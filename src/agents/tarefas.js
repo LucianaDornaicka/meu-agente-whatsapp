@@ -23,6 +23,7 @@ export async function agenteTarefas(mensagem, remetente) {
   // --------------------------------------------------------------------------
 
   // Se o usuário digita "tarefa" e não está em um fluxo, inicia o menu.
+  // **CORREÇÃO APLICADA AQUI**
   if (!estados[remetente]) {
     estados[remetente] = { etapa: "menu" };
     return {
@@ -44,6 +45,7 @@ A qualquer momento, digite *0* para sair.`
   // 3. MÁQUINA DE ESTADOS DA CONVERSA
   // --------------------------------------------------------------------------
 
+  // **CORREÇÃO APLICADA AQUI**
   const estado = estados[remetente];
   let resultado;
 
