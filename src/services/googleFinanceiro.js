@@ -22,21 +22,21 @@ const MESES = {
 };
 
 export const ITENS = [
-  'LUMIAR',
-  'VIOLÃO',
-  'MORADIA - consórcio',
-  'LUZ',
-  'INVESTIMENTOS (OBRIGATÓRIO!)',
-  'CONDOMÍNIO',
-  'GÁS',
   'ACADEMIA',
   'ÁGUA',
   'CLARO',
+  'CONDOMÍNIO',
   'DISNEY',
   'FRETADO',
+  'GÁS',
+  'INVESTIR',
   'IPTU',
+  'LUMIAR',
+  'LUZ',
+  'CONSÓRCIO',
   'PATINS',
   'SEM PARAR',
+  'VIOLÃO',
 ];
 
 async function getGoogleAuth() {
@@ -65,19 +65,29 @@ async function getSheetsService() {
   return google.sheets({ version: 'v4', auth });
 }
 
-export async function preencherGasto(itemIndex, mes, valor) {
+export async function preencherGasto(itemNome, mes, valor) {
   const sheets = await getSheetsService();
   const mesConfig = MESES[mes.toUpperCase()];
   if (!mesConfig) throw new Error(`Mês inválido: ${mes}`);
-  const linha = itemIndex + 3;
+
+  // Busca a linha do item pelo nome na coluna C
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: 'Pagamentos!C3:C17',
+  });
+  const rows = response.data.values || [];
+  const linhaIndex = rows.findIndex(row => row[0]?.toUpperCase() === itemNome.toUpperCase());
+  if (linhaIndex === -1) throw new Error(`Item não encontrado: ${itemNome}`);
+  const linha = linhaIndex + 3;
+
   const valorFormatado = `R$${valor.replace('.', ',')}`;
   await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId: SPREADSHEET_ID,
     resource: {
       valueInputOption: 'USER_ENTERED',
       data: [
-        { range: `Financeiro!${mesConfig.valor}${linha}`, values: [[valorFormatado]] },
-        { range: `Financeiro!${mesConfig.status}${linha}`, values: [['Pago']] },
+        { range: `Pagamentos!${mesConfig.valor}${linha}`, values: [[valorFormatado]] },
+        { range: `Pagamentos!${mesConfig.status}${linha}`, values: [['Pago']] },
       ],
     },
   });
@@ -87,7 +97,7 @@ export async function lerItensPorVencimento(dia) {
   const sheets = await getSheetsService();
   const response = await sheets.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
-    range: 'Financeiro!B3:C17',
+    range: 'Pagamentos!B3:C17',
   });
   const rows = response.data.values || [];
   return rows.filter(row => parseInt(row[0]) === dia).map(row => row[1]);

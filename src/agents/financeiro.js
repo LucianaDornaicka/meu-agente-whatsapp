@@ -54,8 +54,9 @@ export async function agenteFinanceiro(mensagem, remetente) {
 
     case 'informar_valor': {
       const valorLimpo = texto.replace('R$', '').replace(' ', '').trim();
-      if (!/^\d+[,.]?\d*$/.test(valorLimpo)) {
-        resultado = { sucesso: false, resposta: '❌ Valor inválido. Ex: 250,00' };
+      if (!/^\d+([,.]\d{1,2})?$/.test(valorLimpo)) {
+        resultado = { sucesso: false, resposta: '❌ Valor inválido. Ex: 250 ou 250,30' };
+      
         break;
       }
       estado.valor = valorLimpo.replace(',', '.');
@@ -82,7 +83,8 @@ export async function agenteFinanceiro(mensagem, remetente) {
     case 'confirmar': {
       if (texto.toLowerCase() === 'sim') {
         try {
-          await preencherGasto(estado.itemIndex, estado.mes, estado.valor);
+          await preencherGasto(estado.itemNome, estado.mes, estado.valor);
+
           resultado = { sucesso: true, resposta: `✅ *${estado.itemNome}* — R$${estado.valor.replace('.', ',')} registrado como *Pago* em *${estado.mes}*!` };
         } catch (error) {
           console.error('Erro ao preencher gasto:', error);
