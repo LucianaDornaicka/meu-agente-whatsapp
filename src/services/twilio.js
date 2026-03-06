@@ -7,7 +7,7 @@ const client = twilio(
 
 export async function sendMessage(to, body) {
   return client.messages.create({
-    messagingServiceSid: process.env.TWILIO_MESSAGING_SERVICE_SID,
+    from: process.env.TWILIO_WHATSAPP_FROM,
     to,
     body,
   });
