@@ -3,11 +3,11 @@ import twilio from 'twilio';
 const client = twilio(
   process.env.TWILIO_ACCOUNT_SID,
   process.env.TWILIO_AUTH_TOKEN
-);
+ );
 
 export async function sendMessage(to, body) {
   return client.messages.create({
-    from: process.env.TWILIO_WHATSAPP_FROM,
+    messagingServiceSid: process.env.TWILIO_MESSAGING_SERVICE_SID,
     to,
     body,
   });
