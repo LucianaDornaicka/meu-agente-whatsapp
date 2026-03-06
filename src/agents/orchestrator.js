@@ -3,6 +3,9 @@ import { agenteAgenda, estados as estadosAgenda } from './agenda_.js';
 import { agenteTarefas, estados as estadosTarefas } from './tarefas.js';
 import { agenteFinanceiro, estados as estadosFinanceiro } from './financeiro.js';
 import { agenteLembretes, estados as estadosLembretes } from './lembretes.js';
+import { agenteMedicos, estadosMedicos } from './medicos.js';
+import { agenteIngles } from './ingles.js';
+import { agenteCardapio, estadosCardapio } from './cardapio.js';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 
 const STATE_FILE = '/tmp/bot_estados.json';
@@ -15,6 +18,8 @@ function carregarEstados() {
       for (const [r, e] of Object.entries(dados.agenda || {})) estadosAgenda[r] = e;
       for (const [r, e] of Object.entries(dados.financeiro || {})) estadosFinanceiro[r] = e;
       for (const [r, e] of Object.entries(dados.lembretes || {})) estadosLembretes[r] = e;
+      for (const [r, e] of Object.entries(dados.medicos || {})) estadosMedicos[r] = e;
+      for (const [r, e] of Object.entries(dados.cardapio || {})) estadosCardapio[r] = e;
     } catch {}
   }
 }
@@ -25,6 +30,8 @@ function salvarEstados() {
     agenda: estadosAgenda,
     financeiro: estadosFinanceiro,
     lembretes: estadosLembretes,
+    medicos: estadosMedicos,
+    cardapio: estadosCardapio,
   }), 'utf8');
 }
 
@@ -39,12 +46,25 @@ export async function handle(mensagem, remetente) {
     if (texto === "0" || texto === "cancelar") {
       delete estadosAgenda[remetente]; delete estadosTarefas[remetente];
       delete estadosFinanceiro[remetente]; delete estadosLembretes[remetente];
+      delete estadosMedicos[remetente]; delete estadosCardapio[remetente];
       salvarEstados();
-      resultado = { sucesso: true, resposta: "✅ Fluxo cancelado.\n\nDigite:\n*tarefa* → tarefas\n*agenda* → agenda\n*$* → financeiro\n*lembrete* → lembretes" };
+      resultado = { sucesso: true, resposta: "✅ Fluxo cancelado.\n\nDigite:\n*tarefa* → tarefas\n*agenda* → agenda\n*$* → financeiro\n*lembrete* → lembretes\n*médico* → médicos\n*ing* → inglês\n*cardápio* → cardápio" };
+    }
+    else if (estadosMedicos[remetente] || texto === "médico" || texto === "medico") {
+      resultado = await agenteMedicos(mensagem, remetente);
+      salvarEstados();
+    }
+    else if (estadosCardapio[remetente] || texto === "cardápio" || texto === "cardapio") {
+      resultado = await agenteCardapio(mensagem, remetente);
+      salvarEstados();
+    }
+    else if (texto === "ing" || texto === "en" || texto === "inglês" || texto === "ingles") {
+      resultado = await agenteIngles(mensagem, remetente);
     }
     else if (texto === "tarefa" || texto === "tarefas") {
       delete estadosAgenda[remetente]; delete estadosTarefas[remetente];
       delete estadosFinanceiro[remetente]; delete estadosLembretes[remetente];
+      delete estadosMedicos[remetente]; delete estadosCardapio[remetente];
       salvarEstados();
       resultado = await agenteTarefas(mensagem, remetente);
       salvarEstados();
@@ -52,6 +72,7 @@ export async function handle(mensagem, remetente) {
     else if (texto.includes("agenda")) {
       delete estadosAgenda[remetente]; delete estadosTarefas[remetente];
       delete estadosFinanceiro[remetente]; delete estadosLembretes[remetente];
+      delete estadosMedicos[remetente]; delete estadosCardapio[remetente];
       salvarEstados();
       resultado = await agenteAgenda(mensagem, remetente);
       salvarEstados();
@@ -59,6 +80,7 @@ export async function handle(mensagem, remetente) {
     else if (texto === "$") {
       delete estadosAgenda[remetente]; delete estadosTarefas[remetente];
       delete estadosFinanceiro[remetente]; delete estadosLembretes[remetente];
+      delete estadosMedicos[remetente]; delete estadosCardapio[remetente];
       salvarEstados();
       resultado = await agenteFinanceiro(mensagem, remetente);
       salvarEstados();
@@ -66,6 +88,7 @@ export async function handle(mensagem, remetente) {
     else if (texto === "lembrete" || texto === "lembretes") {
       delete estadosAgenda[remetente]; delete estadosTarefas[remetente];
       delete estadosFinanceiro[remetente]; delete estadosLembretes[remetente];
+      delete estadosMedicos[remetente]; delete estadosCardapio[remetente];
       salvarEstados();
       resultado = await agenteLembretes(mensagem, remetente);
       salvarEstados();
@@ -83,7 +106,7 @@ export async function handle(mensagem, remetente) {
       resultado = await agenteLembretes(mensagem, remetente); salvarEstados();
     }
     else {
-      resultado = { sucesso: false, resposta: `❌ Comando não reconhecido.\n\nDigite:\n*tarefa* → tarefas\n*agenda* → agenda\n*$* → financeiro\n*lembrete* → lembretes` };
+      resultado = { sucesso: false, resposta: `❌ Comando não reconhecido.\n\nDigite:\n*tarefa* → tarefas\n*agenda* → agenda\n*$* → financeiro\n*lembrete* → lembretes\n*médico* → médicos\n*ing* → inglês\n*cardápio* → cardápio` };
     }
   } catch (erro) {
     console.error("Erro no orchestrator:", erro);

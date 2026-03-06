@@ -6,9 +6,13 @@ import { handle } from "./agents/orchestrator.js";
 import { enviarResumoDiario } from "./services/resumoAgenda.js";
 import { lembreteVencimentoAmanha, lembreteVencimentoHoje } from "./services/lembreteVencimento.js";
 import { dispararLembretes } from "./services/dispararLembretes.js";
+import { enviarCardapioDiario } from "./agents/cardapio.js";
+import { enviarTarefasCasa } from "./agents/organizacaoCasa.js";
+import { sendMessage } from "./services/twilio.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const DESTINATARIO = process.env.MEU_NUMERO_WHATSAPP;
 
 app.use(express.urlencoded({ extended: false }));
 
@@ -31,7 +35,6 @@ app.post("/webhook/whatsapp", (req, res) => {
   }
 });
 
-// Agenda um callback diário em horário Brasília
 function agendarDiario(horaBrasiliaH, minutos, callback, nome) {
   const horaUTC = horaBrasiliaH + 3;
   function calcularMs() {
@@ -57,6 +60,12 @@ agendarDiario(20, 0, lembreteVencimentoAmanha, 'Vencimento Amanhã');
 
 // Lembrete financeiro (reforço no dia): 20h Brasília
 agendarDiario(20, 0, lembreteVencimentoHoje, 'Vencimento Hoje');
+
+// Cardápio do dia seguinte: 21h Brasília
+agendarDiario(21, 0, () => enviarCardapioDiario(sendMessage, DESTINATARIO), 'Cardápio Diário');
+
+// Tarefas de casa do dia seguinte: 21h Brasília
+agendarDiario(21, 0, () => enviarTarefasCasa(sendMessage, DESTINATARIO), 'Tarefas Casa');
 
 // Disparador de lembretes personalizados: a cada 5 minutos
 setInterval(dispararLembretes, 5 * 60 * 1000);
