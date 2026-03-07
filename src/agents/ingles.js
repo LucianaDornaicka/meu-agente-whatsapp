@@ -29,7 +29,7 @@ async function getSheets() {
 
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 
-const SHEET = 'Inglês';
+const SHEET = 'Ingles';
 
 export async function agenteIngles(mensagem, remetente) {
   const texto = mensagem?.toLowerCase().trim() || '';
@@ -46,7 +46,8 @@ async function buscarProgressoIngles() {
 
     const linksResp = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `'${SHEET}'!D2:D3`,
+      range: `${SHEET}!D2:D3`,
+
 
     });
     const links = linksResp.data.values || [];
@@ -55,7 +56,8 @@ async function buscarProgressoIngles() {
 
     const dadosResp = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `'${SHEET}'!A5:G`,
+      range: `${SHEET}!A5:G`,
+
 
     } );
     const linhas = (dadosResp.data.values || []).filter(l => l[0]);
