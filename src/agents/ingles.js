@@ -46,7 +46,8 @@ async function buscarProgressoIngles() {
 
     const linksResp = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET}!D2:D3`,
+      range: `'${SHEET}'!D2:D3`,
+
     });
     const links = linksResp.data.values || [];
     const linkCurso = links[0]?.[0] || 'https://curso.mairovergara.com/dashboard';
@@ -54,7 +55,8 @@ async function buscarProgressoIngles() {
 
     const dadosResp = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: `${SHEET}!A5:G`,
+      range: `'${SHEET}'!A5:G`,
+
     } );
     const linhas = (dadosResp.data.values || []).filter(l => l[0]);
     const ultimas = linhas.slice(-3);
