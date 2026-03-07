@@ -27,7 +27,7 @@ async function getSheets() {
   return google.sheets({ version: 'v4', auth });
 }
 
-const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
+const SPREADSHEET_ID = process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
 
 const SHEET = 'Ingles';
 
