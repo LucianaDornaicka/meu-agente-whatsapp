@@ -29,6 +29,7 @@ async function getSheets() {
 
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID || process.env.GOOGLE_SPREADSHEET_ID;
 
+
 const SHEET = 'Ingles';
 
 export async function agenteIngles(mensagem, remetente) {
