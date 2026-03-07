@@ -27,7 +27,7 @@ async function getSheets() {
   return google.sheets({ version: 'v4', auth });
 }
 
-const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID;
+const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const SHEET = 'Cardápio';
 
 export const estadosCardapio = {};
@@ -39,7 +39,15 @@ function getLinkCardapio() {
   return `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit#gid=0`;
 }
 
-export async function agenteCardapio(mensagem, remetente ) {
+function getAmanhaEmBrasilia( ) {
+  const agora = new Date();
+  // UTC-3 = Brasília
+  const brasilia = new Date(agora.getTime() - 3 * 60 * 60 * 1000);
+  brasilia.setDate(brasilia.getDate() + 1);
+  return brasilia;
+}
+
+export async function agenteCardapio(mensagem, remetente) {
   const texto = mensagem?.toLowerCase().trim() || '';
   const estado = estadosCardapio[remetente];
 
@@ -75,8 +83,7 @@ export async function agenteCardapio(mensagem, remetente ) {
 
 export async function enviarCardapioDiario(sendMessage, destinatario) {
   try {
-    const amanha = new Date();
-    amanha.setDate(amanha.getDate() + 1);
+    const amanha = getAmanhaEmBrasilia();
     const diaSemana = amanha.getDay();
     const indiceDia = JS_DIA_PARA_PLANILHA[diaSemana];
     const nomeDia = DIAS[indiceDia];

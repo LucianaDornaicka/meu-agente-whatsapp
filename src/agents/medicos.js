@@ -36,7 +36,8 @@ export async function agenteMedicos(mensagem, remetente) {
   const texto = mensagem?.toLowerCase().trim() || '';
   const estado = estadosMedicos[remetente];
 
-  if (texto === 'médico' || texto === 'medico') {
+  if (texto === 'médico' || texto === 'medico' || texto === 'med' || texto === 'médicos' || texto === 'medicos') {
+
     estadosMedicos[remetente] = { etapa: 'menu' };
     return {
       sucesso: true,
