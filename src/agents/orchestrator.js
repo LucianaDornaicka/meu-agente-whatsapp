@@ -55,7 +55,7 @@ export async function handle(mensagem, remetente) {
       delete estadosMedicos[remetente]; delete estadosCardapio[remetente];
       delete estadosCasa[remetente]; delete estadosEstudo[remetente];
       salvarEstados();
-      resultado = { sucesso: true, resposta: "✅ Fluxo cancelado.\n\nDigite o nome ou a letra:\n*agenda* / *A* → agenda\n*cardápio* / *C* → cardápio\n*casa* / *K* → casa\n*estudo* / *E* → estudos bíblicos\n*$* / *F* → financeiro\n*ing* / *I* → inglês\n*lembrete* / *L* → lembretes\n*médico* / *M* → médicos\n*tarefa* / *T* → tarefas" };
+      resultado = { sucesso: true, resposta: "✅ Fluxo cancelado.\n\nDigite a letra ou o nome:\n*A* - Agenda\n*C* - Cardápio\n*K* - Casa\n*E* - Estudo\n*F* - Financeiro\n*I* - Inglês\n*L* - Lembrete\n*M* - Médico\n*T* - Tarefa" };
     }
     else if (estadosMedicos[remetente] || texto === "médico" || texto === "medico" || texto === "med" || texto === "médicos" || texto === "medicos" || texto === "m") {
       resultado = await agenteMedicos(mensagem, remetente);
@@ -125,7 +125,7 @@ export async function handle(mensagem, remetente) {
       resultado = await agenteLembretes(mensagem, remetente); salvarEstados();
     }
     else {
-      resultado = { sucesso: false, resposta: `❌ Comando não reconhecido.\n\nDigite o nome ou a letra:\n*agenda* / *A* → agenda\n*cardápio* / *C* → cardápio\n*casa* / *K* → casa\n*estudo* / *E* → estudos bíblicos\n*$* / *F* → financeiro\n*ing* / *I* → inglês\n*lembrete* / *L* → lembretes\n*médico* / *M* → médicos\n*tarefa* / *T* → tarefas` };
+      resultado = { sucesso: false, resposta: `❌ Comando não reconhecido.\n\nDigite a letra ou o nome:\n*A* - Agenda\n*C* - Cardápio\n*K* - Casa\n*E* - Estudo\n*F* - Financeiro\n*I* - Inglês\n*L* - Lembrete\n*M* - Médico\n*T* - Tarefa` };
     }
   } catch (erro) {
     console.error("Erro no orchestrator:", erro);
