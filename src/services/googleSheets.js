@@ -203,6 +203,8 @@ export async function lerTopicosDeMateria(usuario, materia) {
   }
 }
 
+export { getSheetsService as getSheets };
+
 export async function marcarEstudoConcluido(id) {
   try {
     const sheets = await getSheetsService();
