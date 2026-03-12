@@ -4,7 +4,18 @@ export const estadosEstudo = {};
 
 const STUDY_SPREADSHEET_ID = process.env.STUDY_SPREADSHEET_ID;
 const SHEET_LINK = 'https://docs.google.com/spreadsheets/d/1Ioba9L8BF-oS8RIDxc8gow1HUzJV5Slu3iX-LaGHcW0/edit';
-const SPOTIFY_LINK = 'https://open.spotify.com/playlist/7epqnxKViWlEAJ1yQFAgmq';
+
+// Playlists específicas por livro (Bíblia Falada – A Mensagem)
+const SPOTIFY_PLAYLISTS = {
+  'gênesis': 'https://open.spotify.com/playlist/7epqnxKViWlEAJ1yQFAgmq',
+  'genesis': 'https://open.spotify.com/playlist/7epqnxKViWlEAJ1yQFAgmq',
+};
+
+function getSpotifyLink(livro) {
+  const key = livro.toLowerCase();
+  if (SPOTIFY_PLAYLISTS[key]) return SPOTIFY_PLAYLISTS[key];
+  return `https://open.spotify.com/search/biblia%20falada%20${encodeURIComponent(livro)}`;
+}
 
 // Abreviações para bibliaonline.com.br (minúsculas)
 const ABBR_BIBLIAONLINE = {
@@ -15,7 +26,7 @@ const ABBR_BIBLIAONLINE = {
   '1 reis':'1rs','1reis':'1rs','2 reis':'2rs','2reis':'2rs',
   '1 crônicas':'1cr','1cronicas':'1cr','1 cronicas':'1cr',
   '2 crônicas':'2cr','2cronicas':'2cr','2 cronicas':'2cr',
-  'esdras':'ed','neemias':'ne','ester':'et','jó':'jó','job':'jó',
+  'esdras':'ed','neemias':'ne','ester':'et','jó':'jo','job':'jo',
   'salmos':'sl','salmo':'sl','provérbios':'pv','proverbios':'pv','eclesiastes':'ec',
   'cantares':'ct','cântico':'ct','cantico':'ct',
   'isaías':'is','isaias':'is','jeremias':'jr','lamentações':'lm','lamentacoes':'lm',
@@ -173,11 +184,12 @@ export async function agenteEstudo(mensagem, remetente) {
       const linkBC = abrevBC
         ? `https://www.bible.com/pt/bible/129/${abrevBC}.${capitulo}.NVI`
         : `https://www.bible.com/pt/bible/129`;
+      const spotifyLink = getSpotifyLink(livro);
       resultado = {
         sucesso: true,
         resposta:
           `📖 *Bíblia escrita (NVI):* ${linkBO}\n\n` +
-          `🎧 *Bíblia Falada (A Mensagem ):* ${SPOTIFY_LINK}\n\n` +
+          `🎧 *Bíblia Falada (A Mensagem):* ${spotifyLink}\n\n` +
           `🎧 *Bíblia NVI (áudio):* ${linkBC}`,
       };
       delete estadosEstudo[remetente];
