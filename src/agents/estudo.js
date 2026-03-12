@@ -5,10 +5,12 @@ export const estadosEstudo = {};
 const STUDY_SPREADSHEET_ID = process.env.STUDY_SPREADSHEET_ID;
 const SHEET_LINK = 'https://docs.google.com/spreadsheets/d/1Ioba9L8BF-oS8RIDxc8gow1HUzJV5Slu3iX-LaGHcW0/edit';
 
-// Playlists específicas por livro (Bíblia Falada – A Mensagem)
+// Álbuns/playlists específicos por livro (Bíblia Falada – A Mensagem)
 const SPOTIFY_PLAYLISTS = {
   'gênesis': 'https://open.spotify.com/playlist/7epqnxKViWlEAJ1yQFAgmq',
   'genesis': 'https://open.spotify.com/playlist/7epqnxKViWlEAJ1yQFAgmq',
+  'jó':  'https://open.spotify.com/album/73zSJJ7BQhKyQ3lOpPnBsf',
+  'job': 'https://open.spotify.com/album/73zSJJ7BQhKyQ3lOpPnBsf',
 };
 
 function getSpotifyLink(livro) {
