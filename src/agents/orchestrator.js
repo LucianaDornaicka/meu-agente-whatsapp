@@ -55,28 +55,28 @@ export async function handle(mensagem, remetente) {
       delete estadosMedicos[remetente]; delete estadosCardapio[remetente];
       delete estadosCasa[remetente]; delete estadosEstudo[remetente];
       salvarEstados();
-      resultado = { sucesso: true, resposta: "✅ Fluxo cancelado.\n\nDigite o nome ou a letra:\n*agenda* / *A* → agenda\n*cardápio* / *B* → cardápio\n*casa* / *C* → casa\n*estudo* / *D* → estudos bíblicos\n*$* / *E* → financeiro\n*ing* / *F* → inglês\n*lembrete* / *G* → lembretes\n*médico* / *H* → médicos\n*tarefa* / *I* → tarefas" };
+      resultado = { sucesso: true, resposta: "✅ Fluxo cancelado.\n\nDigite o nome ou a letra:\n*agenda* / *A* → agenda\n*cardápio* / *C* → cardápio\n*casa* / *K* → casa\n*estudo* / *E* → estudos bíblicos\n*$* / *F* → financeiro\n*ing* / *I* → inglês\n*lembrete* / *L* → lembretes\n*médico* / *M* → médicos\n*tarefa* / *T* → tarefas" };
     }
-    else if (estadosMedicos[remetente] || texto === "médico" || texto === "medico" || texto === "med" || texto === "médicos" || texto === "medicos" || texto === "h") {
+    else if (estadosMedicos[remetente] || texto === "médico" || texto === "medico" || texto === "med" || texto === "médicos" || texto === "medicos" || texto === "m") {
       resultado = await agenteMedicos(mensagem, remetente);
       salvarEstados();
     }
-    else if (estadosCardapio[remetente] || texto === "cardápio" || texto === "cardapio" || texto === "b") {
+    else if (estadosCardapio[remetente] || texto === "cardápio" || texto === "cardapio" || texto === "c") {
       resultado = await agenteCardapio(mensagem, remetente);
       salvarEstados();
     }
-    else if (estadosCasa[remetente] || texto === "casa" || texto === "c") {
+    else if (estadosCasa[remetente] || texto === "casa" || texto === "k") {
       resultado = await agenteCasa(mensagem, remetente);
       salvarEstados();
     }
-    else if (estadosEstudo[remetente] || texto === "estudo" || texto === "estudos" || texto === "d") {
+    else if (estadosEstudo[remetente] || texto === "estudo" || texto === "estudos" || texto === "e") {
       resultado = await agenteEstudo(mensagem, remetente);
       salvarEstados();
     }
-    else if (texto === "ing" || texto === "en" || texto === "inglês" || texto === "ingles" || texto === "f") {
+    else if (texto === "ing" || texto === "en" || texto === "inglês" || texto === "ingles" || texto === "i") {
       resultado = await agenteIngles(mensagem, remetente);
     }
-    else if (texto === "tarefa" || texto === "tarefas" || texto === "i") {
+    else if (texto === "tarefa" || texto === "tarefas" || texto === "t") {
       delete estadosAgenda[remetente]; delete estadosTarefas[remetente];
       delete estadosFinanceiro[remetente]; delete estadosLembretes[remetente];
       delete estadosMedicos[remetente]; delete estadosCardapio[remetente];
@@ -94,7 +94,7 @@ export async function handle(mensagem, remetente) {
       resultado = await agenteAgenda(mensagem, remetente);
       salvarEstados();
     }
-    else if (texto === "$" || texto === "e") {
+    else if (texto === "$" || texto === "f") {
       delete estadosAgenda[remetente]; delete estadosTarefas[remetente];
       delete estadosFinanceiro[remetente]; delete estadosLembretes[remetente];
       delete estadosMedicos[remetente]; delete estadosCardapio[remetente];
@@ -103,7 +103,7 @@ export async function handle(mensagem, remetente) {
       resultado = await agenteFinanceiro(mensagem, remetente);
       salvarEstados();
     }
-    else if (texto === "lembrete" || texto === "lembretes" || texto === "g") {
+    else if (texto === "lembrete" || texto === "lembretes" || texto === "l") {
       delete estadosAgenda[remetente]; delete estadosTarefas[remetente];
       delete estadosFinanceiro[remetente]; delete estadosLembretes[remetente];
       delete estadosMedicos[remetente]; delete estadosCardapio[remetente];
@@ -125,7 +125,7 @@ export async function handle(mensagem, remetente) {
       resultado = await agenteLembretes(mensagem, remetente); salvarEstados();
     }
     else {
-      resultado = { sucesso: false, resposta: `❌ Comando não reconhecido.\n\nDigite o nome ou a letra:\n*agenda* / *A* → agenda\n*cardápio* / *B* → cardápio\n*casa* / *C* → casa\n*estudo* / *D* → estudos bíblicos\n*$* / *E* → financeiro\n*ing* / *F* → inglês\n*lembrete* / *G* → lembretes\n*médico* / *H* → médicos\n*tarefa* / *I* → tarefas` };
+      resultado = { sucesso: false, resposta: `❌ Comando não reconhecido.\n\nDigite o nome ou a letra:\n*agenda* / *A* → agenda\n*cardápio* / *C* → cardápio\n*casa* / *K* → casa\n*estudo* / *E* → estudos bíblicos\n*$* / *F* → financeiro\n*ing* / *I* → inglês\n*lembrete* / *L* → lembretes\n*médico* / *M* → médicos\n*tarefa* / *T* → tarefas` };
     }
   } catch (erro) {
     console.error("Erro no orchestrator:", erro);
