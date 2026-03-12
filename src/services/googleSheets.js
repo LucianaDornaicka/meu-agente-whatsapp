@@ -121,3 +121,108 @@ export async function lerTarefasPorCategoria(usuario, categoria) {
     throw error;
   }
 }
+
+// ── Estudos ──────────────────────────────────────────────────────────────────
+
+async function proximoIdEstudo(sheets) {
+  const response = await sheets.spreadsheets.values.get({
+    spreadsheetId: SPREADSHEET_ID,
+    range: 'Estudo!A:A',
+  });
+  const rows = response.data.values || [];
+  const numeros = rows.map(r => parseInt(r[0])).filter(n => !isNaN(n));
+  return numeros.length > 0 ? Math.max(...numeros) + 1 : 1;
+}
+
+export async function adicionarEstudo({ usuario, materia, topico }) {
+  try {
+    const sheets = await getSheetsService();
+    const id = await proximoIdEstudo(sheets);
+    const agora = new Date().toISOString();
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Estudo!A:G',
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [[id, usuario, materia, topico, 'Pendente', agora, '']] },
+    });
+  } catch (error) {
+    console.error('Erro ao adicionar estudo:', error);
+    throw error;
+  }
+}
+
+export async function lerEstudos(usuario) {
+  try {
+    const sheets = await getSheetsService();
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Estudo!A:G',
+    });
+    const rows = response.data.values || [];
+    return rows
+      .filter(row => row[1] === usuario && !isNaN(parseInt(row[0])))
+      .map(row => ({ id: row[0], materia: row[2], topico: row[3], status: row[4] || 'Pendente', dataCriacao: row[5], dataConclusao: row[6] }));
+  } catch (error) {
+    console.error('Erro ao ler estudos:', error);
+    throw error;
+  }
+}
+
+export async function lerMateriasPorUsuario(usuario) {
+  try {
+    const sheets = await getSheetsService();
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Estudo!B:C',
+    });
+    const rows = response.data.values || [];
+    const materias = [...new Set(
+      rows.filter(row => row[0] === usuario && row[1]).map(row => row[1])
+    )];
+    return materias;
+  } catch (error) {
+    console.error('Erro ao ler matérias:', error);
+    throw error;
+  }
+}
+
+export async function lerTopicosDeMateria(usuario, materia) {
+  try {
+    const sheets = await getSheetsService();
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Estudo!A:G',
+    });
+    const rows = response.data.values || [];
+    return rows
+      .filter(row => row[1] === usuario && row[2]?.toLowerCase() === materia.toLowerCase() && !isNaN(parseInt(row[0])))
+      .map((row, i) => ({ seq: i + 1, id: row[0], topico: row[3], status: row[4] || 'Pendente' }));
+  } catch (error) {
+    console.error('Erro ao ler tópicos:', error);
+    throw error;
+  }
+}
+
+export async function marcarEstudoConcluido(id) {
+  try {
+    const sheets = await getSheetsService();
+    const response = await sheets.spreadsheets.values.get({
+      spreadsheetId: SPREADSHEET_ID,
+      range: 'Estudo!A:G',
+    });
+    const rows = response.data.values || [];
+    const rowIndex = rows.findIndex(row => row[0] === String(id));
+    if (rowIndex === -1) return false;
+    const agora = new Date().toISOString();
+    await sheets.spreadsheets.values.update({
+      spreadsheetId: SPREADSHEET_ID,
+      range: `Estudo!E${rowIndex + 1}:G${rowIndex + 1}`,
+      valueInputOption: 'USER_ENTERED',
+      resource: { values: [['Concluído', rows[rowIndex][5] || agora, agora]] },
+    });
+    return true;
+  } catch (error) {
+    console.error('Erro ao marcar estudo como concluído:', error);
+    throw error;
+  }
+}
