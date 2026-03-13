@@ -5,18 +5,80 @@ export const estadosEstudo = {};
 const STUDY_SPREADSHEET_ID = process.env.STUDY_SPREADSHEET_ID;
 const SHEET_LINK = 'https://docs.google.com/spreadsheets/d/1Ioba9L8BF-oS8RIDxc8gow1HUzJV5Slu3iX-LaGHcW0/edit';
 
-// Álbuns/playlists específicos por livro (Bíblia Falada – A Mensagem)
-const SPOTIFY_PLAYLISTS = {
-  'gênesis': 'https://open.spotify.com/playlist/7epqnxKViWlEAJ1yQFAgmq',
-  'genesis': 'https://open.spotify.com/playlist/7epqnxKViWlEAJ1yQFAgmq',
-  'jó':  'https://open.spotify.com/album/73zSJJ7BQhKyQ3lOpPnBsf',
-  'job': 'https://open.spotify.com/album/73zSJJ7BQhKyQ3lOpPnBsf',
+// IDs de álbuns no Spotify por livro (Bíblia Falada – A Mensagem)
+// 'jó' (com acento) = Jó (JOB) | 'jo' (sem acento) = João (Evangelho)
+// Amós, Obadias, Naum, Sofonias e Judas não têm álbum → fallback de busca
+const SPOTIFY_ALBUMS = {
+  // ANTIGO TESTAMENTO
+  'gênesis':'4COk30f1B1EECjqi66HGZ6','genesis':'4COk30f1B1EECjqi66HGZ6','gn':'4COk30f1B1EECjqi66HGZ6',
+  'êxodo':'6fWfOMAiYDuFKF1ylevRxS','exodo':'6fWfOMAiYDuFKF1ylevRxS','ex':'6fWfOMAiYDuFKF1ylevRxS',
+  'levítico':'1pFIhhNbP3Rjc86iPGkNEf','levitico':'1pFIhhNbP3Rjc86iPGkNEf','lv':'1pFIhhNbP3Rjc86iPGkNEf',
+  'números':'0kDKaU4MAKkLrT5GUhBppT','numeros':'0kDKaU4MAKkLrT5GUhBppT','nm':'0kDKaU4MAKkLrT5GUhBppT',
+  'deuteronômio':'7A2JefHH6LRXSYdZvfvEnT','deuteronomio':'7A2JefHH6LRXSYdZvfvEnT','dt':'7A2JefHH6LRXSYdZvfvEnT',
+  'josué':'1dSiDcc2hQbvm7iY06u5IQ','josue':'1dSiDcc2hQbvm7iY06u5IQ','js':'1dSiDcc2hQbvm7iY06u5IQ',
+  'juízes':'0LDrfGaRxXCJeBTbarroHQ','juizes':'0LDrfGaRxXCJeBTbarroHQ','jz':'0LDrfGaRxXCJeBTbarroHQ',
+  'rute':'5c0KGHpIuD7BkEU4mEu82k','rt':'5c0KGHpIuD7BkEU4mEu82k',
+  '1 samuel':'5drDPCxBXEvDYPYJnszLIx','1samuel':'5drDPCxBXEvDYPYJnszLIx','1sm':'5drDPCxBXEvDYPYJnszLIx',
+  '2 samuel':'5WVpe4xIgjZRzMud3ZUMPc','2samuel':'5WVpe4xIgjZRzMud3ZUMPc','2sm':'5WVpe4xIgjZRzMud3ZUMPc',
+  '1 reis':'2Sdp0viKdkqmlJsjEhwkPb','1reis':'2Sdp0viKdkqmlJsjEhwkPb','1rs':'2Sdp0viKdkqmlJsjEhwkPb',
+  '2 reis':'7d7CHUCXgVnEX6TaMxILQb','2reis':'7d7CHUCXgVnEX6TaMxILQb','2rs':'7d7CHUCXgVnEX6TaMxILQb',
+  '1 crônicas':'1Zt0bDugkqBBw42KsniOnP','1 cronicas':'1Zt0bDugkqBBw42KsniOnP','1cr':'1Zt0bDugkqBBw42KsniOnP',
+  '2 crônicas':'54dVbqxAfc43UCWsQVyc2z','2 cronicas':'54dVbqxAfc43UCWsQVyc2z','2cr':'54dVbqxAfc43UCWsQVyc2z',
+  'esdras':'0uElqlyZwUPptl04mGDxt5','ed':'0uElqlyZwUPptl04mGDxt5',
+  'neemias':'3EY7cEmmmOw8zfmlm9sPRN','ne':'3EY7cEmmmOw8zfmlm9sPRN',
+  'ester':'12BXOD6TfhBwXZS9vIbAT2','et':'12BXOD6TfhBwXZS9vIbAT2',
+  'jó':'73zSJJ7BQhKyQ3lOpPnBsf','job':'73zSJJ7BQhKyQ3lOpPnBsf', // ← COM ACENTO = Jó (JOB)
+  'salmos':'6bzuQx4IMqVqHaFlsqLeNi','sl':'6bzuQx4IMqVqHaFlsqLeNi',
+  'provérbios':'30Pt5ojZjsXbYzaMM6tm9F','proverbios':'30Pt5ojZjsXbYzaMM6tm9F','pv':'30Pt5ojZjsXbYzaMM6tm9F',
+  'eclesiastes':'1k6fOgx6TSAfQDNrJYo9rb','ec':'1k6fOgx6TSAfQDNrJYo9rb',
+  'cânticos':'3mBq8yDWW9mdXVHTyCRUDR','canticos':'3mBq8yDWW9mdXVHTyCRUDR','ct':'3mBq8yDWW9mdXVHTyCRUDR',
+  'isaías':'1GASrF8WHcAIoUY6nWXbLN','isaias':'1GASrF8WHcAIoUY6nWXbLN','is':'1GASrF8WHcAIoUY6nWXbLN',
+  'jeremias':'5y8kG2UEbyoIICNvsxLdcf','jr':'5y8kG2UEbyoIICNvsxLdcf',
+  'lamentações':'6nUbzpxwW6TXZoSRwFSQn9','lamentacoes':'6nUbzpxwW6TXZoSRwFSQn9','lm':'6nUbzpxwW6TXZoSRwFSQn9',
+  'ezequiel':'39RSbDQ0lfJ1Ox94Wk9Qbq','ez':'39RSbDQ0lfJ1Ox94Wk9Qbq',
+  'daniel':'5scAswx77z3q5C8h9sSTd0','dn':'5scAswx77z3q5C8h9sSTd0',
+  'oséias':'0Kt3hVOWrWzl5zWP4CU5sI','oseias':'0Kt3hVOWrWzl5zWP4CU5sI','os':'0Kt3hVOWrWzl5zWP4CU5sI',
+  'jonas':'6DnofUfJQCI2beMRyREiyx','jn':'6DnofUfJQCI2beMRyREiyx',
+  'miquéias':'7eUe52VwuuL8ex1nF1KZnp','miqueias':'7eUe52VwuuL8ex1nF1KZnp','mq':'7eUe52VwuuL8ex1nF1KZnp',
+  'habacuque':'2Q10ATMUnbMAO0ML4QapfC','hc':'2Q10ATMUnbMAO0ML4QapfC',
+  'ageu':'65csol0zvE4ZPUMb20HMdI','ag':'65csol0zvE4ZPUMb20HMdI',
+  'zacarias':'7roBJNzCvXFLZoIQCXPN4m','zc':'7roBJNzCvXFLZoIQCXPN4m',
+  'malaquias':'4GAWcOT7jV6soNczPvUtv6','ml':'4GAWcOT7jV6soNczPvUtv6',
+  // NOVO TESTAMENTO
+  'mateus':'4mQOxaG8HRFuNPd0i09JbE','mt':'4mQOxaG8HRFuNPd0i09JbE',
+  'marcos':'0NwneT64ZuzSDVBjzmZtyf','mc':'0NwneT64ZuzSDVBjzmZtyf',
+  'lucas':'5PxlFQuzBsrj5Ht1FcdI38','lc':'5PxlFQuzBsrj5Ht1FcdI38',
+  'joão':'4CCaCZjJolWgtSERElPAeo','joao':'4CCaCZjJolWgtSERElPAeo','jo':'4CCaCZjJolWgtSERElPAeo', // ← SEM ACENTO = João
+  'atos':'1rKLWaOyskn9fXsuAJDWNy','at':'1rKLWaOyskn9fXsuAJDWNy',
+  'romanos':'46ZPluApRsSb3LZagvNBr9','rm':'46ZPluApRsSb3LZagvNBr9',
+  '1 coríntios':'5G5JEQxswLRXRFgIlGMyAv','1 corintios':'5G5JEQxswLRXRFgIlGMyAv','1co':'5G5JEQxswLRXRFgIlGMyAv',
+  '2 coríntios':'1ODki1scmpF2nDdgHuEAUj','2 corintios':'1ODki1scmpF2nDdgHuEAUj','2co':'1ODki1scmpF2nDdgHuEAUj',
+  'gálatas':'3bLnRHQ0FXqsr8nLebpeKJ','galatas':'3bLnRHQ0FXqsr8nLebpeKJ','gl':'3bLnRHQ0FXqsr8nLebpeKJ',
+  'efésios':'0WhgD7BMjTJExpYUMKL1lp','efesios':'0WhgD7BMjTJExpYUMKL1lp','ef':'0WhgD7BMjTJExpYUMKL1lp',
+  'filipenses':'3BwspLR5HIHE2rcvPqjbYc','fp':'3BwspLR5HIHE2rcvPqjbYc',
+  'colossenses':'6nrrN2wfse8FvVbHEPKAQV','cl':'6nrrN2wfse8FvVbHEPKAQV',
+  '1 tessalonicenses':'023bb9SmoxZtfmsbUrz3WK','1ts':'023bb9SmoxZtfmsbUrz3WK',
+  '2 tessalonicenses':'60sLLAcmOzvVgypbef4hVl','2ts':'60sLLAcmOzvVgypbef4hVl',
+  '1 timóteo':'6aOHvDwF4wsUWQyzdAZrPw','1 timoteo':'6aOHvDwF4wsUWQyzdAZrPw','1tm':'6aOHvDwF4wsUWQyzdAZrPw',
+  '2 timóteo':'2oLfRU6fWLI0aLtXqAoold','2 timoteo':'2oLfRU6fWLI0aLtXqAoold','2tm':'2oLfRU6fWLI0aLtXqAoold',
+  'tito':'2iUdozAxZoUS1CCAr1zSym','tt':'2iUdozAxZoUS1CCAr1zSym',
+  'filemom':'4umWdNZh63KacTDIV1NusR','fm':'4umWdNZh63KacTDIV1NusR',
+  'hebreus':'2OhUK4K4vAN3viveoXKABR','hb':'2OhUK4K4vAN3viveoXKABR',
+  'tiago':'1BRzoDKa12yPdWNGEEGj1o','tg':'1BRzoDKa12yPdWNGEEGj1o',
+  '1 pedro':'3skshPyPwQ0FEYItSce5c9','1pedro':'3skshPyPwQ0FEYItSce5c9','1pe':'3skshPyPwQ0FEYItSce5c9',
+  '2 pedro':'1mAJxSkCOxQFDFgduQHRJS','2pedro':'1mAJxSkCOxQFDFgduQHRJS','2pe':'1mAJxSkCOxQFDFgduQHRJS',
+  '1 joão':'0OvnL2mhXkOY4JfyERIAmA','1 joao':'0OvnL2mhXkOY4JfyERIAmA','1jo':'0OvnL2mhXkOY4JfyERIAmA',
+  '2 joão':'3IbFQHN6AdBndK2lZYB1Vg','2 joao':'3IbFQHN6AdBndK2lZYB1Vg','2jo':'3IbFQHN6AdBndK2lZYB1Vg',
+  '3 joão':'55dSzuezVLx6t7As7byXN2','3 joao':'55dSzuezVLx6t7As7byXN2','3jo':'55dSzuezVLx6t7As7byXN2',
+  'apocalipse':'0Wldpi4kzmHIwWgjDMsO17','ap':'0Wldpi4kzmHIwWgjDMsO17',
+  // Sem álbum: Amós, Obadias, Joel, Naum, Sofonias, Judas → fallback de busca
 };
 
-function getSpotifyLink(livro) {
-  const key = livro.toLowerCase();
-  if (SPOTIFY_PLAYLISTS[key]) return SPOTIFY_PLAYLISTS[key];
-  return `https://open.spotify.com/search/biblia%20falada%20${encodeURIComponent(livro)}`;
+function getSpotifyLink(livroInput) {
+  const key = livroInput.trim().toLowerCase();
+  const albumId = SPOTIFY_ALBUMS[key];
+  if (albumId) return `https://open.spotify.com/album/${albumId}`;
+  return `https://open.spotify.com/search/b%C3%ADblia%20falada%20${encodeURIComponent(livroInput.trim())}`;
 }
 
 // Abreviações para bibliaonline.com.br (slug raw — será passado por encodeURIComponent)
