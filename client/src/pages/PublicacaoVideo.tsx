@@ -62,7 +62,7 @@ function CheckRow({ checked, onToggle, label, children, sub }: {
           {children}
         </div>
       </div>
-      {sub && <div className="ml-[152px] mt-1.5">{sub}</div>}
+      {sub && <div className="ml-[152px] mt-1 flex justify-end">{sub}</div>}
     </div>
   )
 }
@@ -240,8 +240,8 @@ export default function PublicacaoVideo() {
             {/* 1. Upload */}
             <CheckRow checked={ytChecks[IDX_UPLOAD]} onToggle={() => toggleCheck(IDX_UPLOAD)} label="⬆️ Upload do vídeo">
               <a href={YOUTUBE_STUDIO[idioma]} target="_blank" rel="noopener noreferrer"
-                className="btn-xs bg-red-500 text-white hover:bg-red-600">
-                <ExternalLink size={11} /> Abrir Studio
+                className="text-xs text-gray-500 mr-auto">
+                — <span className="text-red-600 hover:underline">Upload</span>
               </a>
               <button onClick={abrirPastaVideos} className="btn-xs">
                 <FolderOpen size={11} /> 📁 Todos
@@ -278,7 +278,7 @@ export default function PublicacaoVideo() {
             >
               <textarea
                 className="input py-1 text-xs flex-1 min-w-0 resize-none"
-                rows={3}
+                rows={1}
                 placeholder="Descrição do vídeo..."
                 value={descricoes[idioma]}
                 onChange={e => setDescricoes(d => ({ ...d, [idioma]: e.target.value }))}
@@ -298,10 +298,9 @@ export default function PublicacaoVideo() {
             {/* 5. Tags */}
             <CheckRow checked={ytChecks[IDX_TAGS]} onToggle={() => toggleCheck(IDX_TAGS)} label="🏷️ Tags">
               <a href="https://rapidtags.io/generator" target="_blank" rel="noopener noreferrer"
-                className="btn-xs bg-violet-100 text-violet-700 hover:bg-violet-200">
-                <Tag size={11} /> Gerar Tags
+                className="text-xs text-gray-500 mr-auto">
+                — <span className="text-violet-600 hover:underline">gerar tags</span>
               </a>
-              <span className="text-xs text-gray-400">"Mostrar Mais" no Studio</span>
             </CheckRow>
 
             {/* 6. Vídeo anterior */}
@@ -333,11 +332,11 @@ export default function PublicacaoVideo() {
             </CheckRow>
 
             {/* 7. Publicado */}
-            <CheckRow checked={ytChecks[IDX_PUBLICADO]} onToggle={() => toggleCheck(IDX_PUBLICADO)} label="✅ Publicado">
-              <button onClick={salvarPublicacao}
-                className="btn-xs bg-green-500 text-white hover:bg-green-600">
-                <CheckCircle2 size={11} /> Marcar como Publicado
-              </button>
+            <CheckRow
+              checked={ytChecks[IDX_PUBLICADO]}
+              onToggle={() => { if (!ytChecks[IDX_PUBLICADO]) salvarPublicacao(); toggleCheck(IDX_PUBLICADO) }}
+              label="✅ Publicado">
+              <></>
             </CheckRow>
 
           </div>
@@ -460,11 +459,11 @@ export default function PublicacaoVideo() {
               </CheckRow>
 
               {/* 7. Publicado */}
-              <CheckRow checked={spChecks[IDX_SP_PUBLICADO]} onToggle={() => toggleSP(IDX_SP_PUBLICADO)} label="✅ Publicado">
-                <button onClick={salvarPublicacaoSP}
-                  className="btn-xs bg-green-500 text-white hover:bg-green-600">
-                  <CheckCircle2 size={11} /> Marcar como Publicado
-                </button>
+              <CheckRow
+                checked={spChecks[IDX_SP_PUBLICADO]}
+                onToggle={() => { if (!spChecks[IDX_SP_PUBLICADO]) salvarPublicacaoSP(); toggleSP(IDX_SP_PUBLICADO) }}
+                label="✅ Publicado">
+                <></>
               </CheckRow>
 
             </div>
