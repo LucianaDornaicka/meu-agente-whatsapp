@@ -238,7 +238,7 @@ export default function PublicacaoVideo() {
           <div className="card overflow-hidden divide-y divide-gray-100">
 
             {/* 1. Upload */}
-            <CheckRow checked={ytChecks[IDX_UPLOAD]} onToggle={() => toggleCheck(IDX_UPLOAD)} label="Upload do vídeo">
+            <CheckRow checked={ytChecks[IDX_UPLOAD]} onToggle={() => toggleCheck(IDX_UPLOAD)} label="⬆️ Upload do vídeo">
               <a href={YOUTUBE_STUDIO[idioma]} target="_blank" rel="noopener noreferrer"
                 className="btn-xs bg-red-500 text-white hover:bg-red-600">
                 <ExternalLink size={11} /> Abrir Studio
@@ -249,7 +249,7 @@ export default function PublicacaoVideo() {
             </CheckRow>
 
             {/* 2. Título */}
-            <CheckRow checked={ytChecks[IDX_TITULO]} onToggle={() => toggleCheck(IDX_TITULO)} label="Título">
+            <CheckRow checked={ytChecks[IDX_TITULO]} onToggle={() => toggleCheck(IDX_TITULO)} label="✏️ Título">
               <input
                 className="input py-1 text-xs flex-1 min-w-0"
                 placeholder="Título do vídeo"
@@ -267,7 +267,7 @@ export default function PublicacaoVideo() {
             <CheckRow
               checked={ytChecks[IDX_DESCRICAO]}
               onToggle={() => toggleCheck(IDX_DESCRICAO)}
-              label="Descrição"
+              label="📝 Descrição"
               sub={
                 <button onClick={() => copiar('descricao', descricoes[idioma])}
                   className={`btn-xs ${copiado === 'descricao' ? 'bg-green-100 text-green-600' : ''}`}>
@@ -286,7 +286,7 @@ export default function PublicacaoVideo() {
             </CheckRow>
 
             {/* 4. Miniatura */}
-            <CheckRow checked={ytChecks[IDX_MINIATURA]} onToggle={() => toggleCheck(IDX_MINIATURA)} label="Miniatura">
+            <CheckRow checked={ytChecks[IDX_MINIATURA]} onToggle={() => toggleCheck(IDX_MINIATURA)} label="🖼️ Miniatura">
               <span className="text-xs text-amber-600 flex items-center gap-1">
                 <Image size={11} /> Upload no Studio
               </span>
@@ -296,7 +296,7 @@ export default function PublicacaoVideo() {
             </CheckRow>
 
             {/* 5. Tags */}
-            <CheckRow checked={ytChecks[IDX_TAGS]} onToggle={() => toggleCheck(IDX_TAGS)} label="Tags">
+            <CheckRow checked={ytChecks[IDX_TAGS]} onToggle={() => toggleCheck(IDX_TAGS)} label="🏷️ Tags">
               <a href="https://rapidtags.io/generator" target="_blank" rel="noopener noreferrer"
                 className="btn-xs bg-violet-100 text-violet-700 hover:bg-violet-200">
                 <Tag size={11} /> Gerar Tags
@@ -308,7 +308,7 @@ export default function PublicacaoVideo() {
             <CheckRow
               checked={ytChecks[IDX_VIDEO_ANTERIOR]}
               onToggle={() => toggleCheck(IDX_VIDEO_ANTERIOR)}
-              label="Vídeo anterior"
+              label="📺 Vídeo anterior"
               sub={
                 <div className="space-y-1">
                   <a href="https://studio.youtube.com" target="_blank" rel="noopener noreferrer"
@@ -333,7 +333,7 @@ export default function PublicacaoVideo() {
             </CheckRow>
 
             {/* 7. Publicado */}
-            <CheckRow checked={ytChecks[IDX_PUBLICADO]} onToggle={() => toggleCheck(IDX_PUBLICADO)} label="Publicado">
+            <CheckRow checked={ytChecks[IDX_PUBLICADO]} onToggle={() => toggleCheck(IDX_PUBLICADO)} label="✅ Publicado">
               <button onClick={salvarPublicacao}
                 className="btn-xs bg-green-500 text-white hover:bg-green-600">
                 <CheckCircle2 size={11} /> Marcar como Publicado
@@ -390,7 +390,7 @@ export default function PublicacaoVideo() {
             <div className="card overflow-hidden divide-y divide-gray-100">
 
               {/* 1. Novo Episódio */}
-              <CheckRow checked={spChecks[IDX_SP_UPLOAD]} onToggle={() => toggleSP(IDX_SP_UPLOAD)} label="Novo Episódio">
+              <CheckRow checked={spChecks[IDX_SP_UPLOAD]} onToggle={() => toggleSP(IDX_SP_UPLOAD)} label="📁 Novo Episódio">
                 <a href={SPOTIFY_NEW_EP[idioma]} target="_blank" rel="noopener noreferrer"
                   className="btn-xs bg-green-500 text-white hover:bg-green-600">
                   <ExternalLink size={11} /> Abrir Spotify
@@ -401,7 +401,7 @@ export default function PublicacaoVideo() {
               </CheckRow>
 
               {/* 2. Título */}
-              <CheckRow checked={spChecks[IDX_SP_TITULO]} onToggle={() => toggleSP(IDX_SP_TITULO)} label="Título">
+              <CheckRow checked={spChecks[IDX_SP_TITULO]} onToggle={() => toggleSP(IDX_SP_TITULO)} label="✏️ Título">
                 <input
                   className="input py-1 text-xs flex-1 min-w-0"
                   placeholder="Título do episódio"
@@ -419,7 +419,7 @@ export default function PublicacaoVideo() {
               <CheckRow
                 checked={spChecks[IDX_SP_DESCRICAO]}
                 onToggle={() => toggleSP(IDX_SP_DESCRICAO)}
-                label="Descrição"
+                label="📝 Descrição"
                 sub={
                   <button onClick={() => copiar('spDescricao', descricoesSP[idioma])}
                     className={`btn-xs ${copiado === 'spDescricao' ? 'bg-green-100 text-green-600' : ''}`}>
@@ -438,14 +438,14 @@ export default function PublicacaoVideo() {
               </CheckRow>
 
               {/* 4. Miniatura */}
-              <CheckRow checked={spChecks[IDX_SP_MINIATURA]} onToggle={() => toggleSP(IDX_SP_MINIATURA)} label="Miniatura">
+              <CheckRow checked={spChecks[IDX_SP_MINIATURA]} onToggle={() => toggleSP(IDX_SP_MINIATURA)} label="🖼️ Miniatura">
                 <button onClick={abrirPastaVideos} className="btn-xs">
                   <FolderOpen size={11} /> 📁 Todos
                 </button>
               </CheckRow>
 
               {/* 5. Tags */}
-              <CheckRow checked={spChecks[IDX_SP_TAGS]} onToggle={() => toggleSP(IDX_SP_TAGS)} label="Tags">
+              <CheckRow checked={spChecks[IDX_SP_TAGS]} onToggle={() => toggleSP(IDX_SP_TAGS)} label="🏷️ Tags">
                 <a href="https://rapidtags.io/generator" target="_blank" rel="noopener noreferrer"
                   className="btn-xs bg-violet-100 text-violet-700 hover:bg-violet-200">
                   <Tag size={11} /> Gerar Tags
@@ -453,14 +453,14 @@ export default function PublicacaoVideo() {
               </CheckRow>
 
               {/* 6. Arte do Episódio */}
-              <CheckRow checked={spChecks[IDX_SP_ARTE]} onToggle={() => toggleSP(IDX_SP_ARTE)} label="Arte do Episódio">
+              <CheckRow checked={spChecks[IDX_SP_ARTE]} onToggle={() => toggleSP(IDX_SP_ARTE)} label="🎨 Arte do Episódio">
                 <button onClick={abrirPastaVideos} className="btn-xs">
                   <FolderOpen size={11} /> 📁 Todos
                 </button>
               </CheckRow>
 
               {/* 7. Publicado */}
-              <CheckRow checked={spChecks[IDX_SP_PUBLICADO]} onToggle={() => toggleSP(IDX_SP_PUBLICADO)} label="Publicado">
+              <CheckRow checked={spChecks[IDX_SP_PUBLICADO]} onToggle={() => toggleSP(IDX_SP_PUBLICADO)} label="✅ Publicado">
                 <button onClick={salvarPublicacaoSP}
                   className="btn-xs bg-green-500 text-white hover:bg-green-600">
                   <CheckCircle2 size={11} /> Marcar como Publicado
