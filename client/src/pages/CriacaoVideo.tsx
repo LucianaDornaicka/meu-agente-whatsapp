@@ -412,6 +412,70 @@ export default function CriacaoVideo() {
   // VIEW: LISTA DE EPISÓDIOS
   // ══════════════════════════════════════════════════════════════════════════
   if (view === 'lista') {
+    const emAndamento = lista.filter(ep => ep.etapasConcluidas.length < ETAPAS.length)
+    const finalizados = lista.filter(ep => ep.etapasConcluidas.length >= ETAPAS.length)
+
+    const renderCard = (ep: EpisodioResumo) => {
+      const finalizado = ep.etapasConcluidas.length >= ETAPAS.length
+      const etapaNum = ETAPAS.findIndex(e => e.id === ep.etapaAtual) + 1
+      return (
+        <div key={ep.id} className="card p-4 flex items-center gap-4">
+          <div className="w-10 h-10 bg-pink-50 rounded-xl flex items-center justify-center flex-shrink-0 text-xl">
+            {finalizado ? '✅' : '🎬'}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-gray-900 text-sm truncate">
+              {ep.titulo || <span className="text-gray-400 font-normal">Sem título</span>}
+            </p>
+            <div className="flex items-center gap-3 mt-0.5">
+              {finalizado ? (
+                <span className="text-xs text-green-600 font-medium">Pipeline concluído</span>
+              ) : (
+                <span className="text-xs text-pink-600 font-medium">
+                  Etapa {etapaNum}/7 — {ETAPA_LABEL[ep.etapaAtual] || ep.etapaAtual}
+                </span>
+              )}
+              <div className="flex items-center gap-0.5">
+                {ETAPAS.map(e => (
+                  <div
+                    key={e.id}
+                    className={`w-2 h-2 rounded-full ${
+                      ep.etapasConcluidas.includes(e.id) ? 'bg-green-400' :
+                      ep.etapaAtual === e.id ? 'bg-pink-400' : 'bg-gray-200'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-1 mt-0.5 text-xs text-gray-400">
+              <Clock size={10} />
+              {formatarData(ep.atualizadoEm)}
+              {ep.pastaNome && <span className="ml-1 text-gray-300">• {ep.pastaNome}</span>}
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              onClick={() => abrirEpisodio(ep.id)}
+              className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                finalizado
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                  : 'bg-pink-500 text-white hover:bg-pink-600'
+              }`}
+            >
+              {finalizado ? 'Ver' : 'Continuar'}
+            </button>
+            <button
+              onClick={() => excluirEpisodio(ep.id)}
+              className="p-1.5 text-gray-300 hover:text-red-400 transition-colors"
+              title="Excluir episódio"
+            >
+              <Trash2 size={15} />
+            </button>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <ModuleLayout title="Criação de Vídeos" emoji="🎬" description="Pipeline de produção" color="text-pink-600" bgColor="bg-pink-50">
         <div className="flex items-center justify-between mb-5">
@@ -442,62 +506,23 @@ export default function CriacaoVideo() {
             <p className="text-sm">Clique em "Novo episódio" para começar</p>
           </div>
         ) : (
-          <div className="space-y-3">
-            {lista.map(ep => {
-              const etapaNum = ETAPAS.findIndex(e => e.id === ep.etapaAtual) + 1
-              const concluidasNum = ep.etapasConcluidas.length
-              return (
-                <div key={ep.id} className="card p-4 flex items-center gap-4">
-                  {/* Ícone + info */}
-                  <div className="w-10 h-10 bg-pink-50 rounded-xl flex items-center justify-center flex-shrink-0 text-xl">
-                    🎬
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 text-sm truncate">
-                      {ep.titulo || <span className="text-gray-400 font-normal">Sem título</span>}
-                    </p>
-                    <div className="flex items-center gap-3 mt-0.5">
-                      <span className="text-xs text-pink-600 font-medium">
-                        Etapa {etapaNum}/7 — {ETAPA_LABEL[ep.etapaAtual] || ep.etapaAtual}
-                      </span>
-                      {/* mini barra de progresso */}
-                      <div className="flex items-center gap-0.5">
-                        {ETAPAS.map((e, i) => (
-                          <div
-                            key={e.id}
-                            className={`w-2 h-2 rounded-full ${
-                              ep.etapasConcluidas.includes(e.id) ? 'bg-green-400' :
-                              ep.etapaAtual === e.id ? 'bg-pink-400' : 'bg-gray-200'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 mt-0.5 text-xs text-gray-400">
-                      <Clock size={10} />
-                      {formatarData(ep.atualizadoEm)}
-                      {ep.pastaNome && <span className="ml-1 text-gray-300">• {ep.pastaNome}</span>}
-                    </div>
-                  </div>
-                  {/* Ações */}
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <button
-                      onClick={() => abrirEpisodio(ep.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-pink-500 text-white text-xs font-medium rounded-lg hover:bg-pink-600 transition-colors"
-                    >
-                      Continuar
-                    </button>
-                    <button
-                      onClick={() => excluirEpisodio(ep.id)}
-                      className="p-1.5 text-gray-300 hover:text-red-400 transition-colors"
-                      title="Excluir episódio"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
+          <div className="space-y-5">
+            {emAndamento.length > 0 && (
+              <div className="space-y-3">
+                {emAndamento.map(renderCard)}
+              </div>
+            )}
+
+            {finalizados.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                  <CheckCircle2 size={12} className="text-green-500" /> Episódios Finalizados
+                </h3>
+                <div className="space-y-3">
+                  {finalizados.map(renderCard)}
                 </div>
-              )
-            })}
+              </div>
+            )}
           </div>
         )}
       </ModuleLayout>
