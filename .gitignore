@@ -1,6 +1,5 @@
 node_modules/
 client/node_modules/
-client/dist/
 serviceAccount.json
 .env
 render.env
