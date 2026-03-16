@@ -48,6 +48,29 @@ interface FormSpotify {
   hora: string
 }
 
+function CheckRow({ checked, onToggle, label, children }: {
+  checked: boolean
+  onToggle: () => void
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className={`rounded-xl border transition-all ${checked ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}>
+      <div className="flex items-start gap-3 p-3">
+        <button onClick={onToggle} className="mt-0.5 flex-shrink-0">
+          {checked
+            ? <CheckCircle2 size={18} className="text-green-500" />
+            : <Circle size={18} className="text-gray-300" />}
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className={`text-sm font-medium mb-2 ${checked ? 'text-green-700 line-through' : 'text-gray-800'}`}>{label}</p>
+          {children}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const authHeaders = () => ({
   'Content-Type': 'application/json',
   Authorization: `Bearer ${localStorage.getItem('app_token')}`,
@@ -198,22 +221,6 @@ export default function PublicacaoVideo() {
   const ytChecks = checks[idioma]
   const concluidos = ytChecks.filter(Boolean).length
 
-  const CheckRow = ({ idx, label, children }: { idx: number; label: string; children: React.ReactNode }) => (
-    <div className={`rounded-xl border transition-all ${ytChecks[idx] ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}>
-      <div className="flex items-start gap-3 p-3">
-        <button onClick={() => toggleCheck(idx)} className="mt-0.5 flex-shrink-0">
-          {ytChecks[idx]
-            ? <CheckCircle2 size={18} className="text-green-500" />
-            : <Circle size={18} className="text-gray-300" />}
-        </button>
-        <div className="flex-1 min-w-0">
-          <p className={`text-sm font-medium mb-2 ${ytChecks[idx] ? 'text-green-700 line-through' : 'text-gray-800'}`}>{label}</p>
-          {children}
-        </div>
-      </div>
-    </div>
-  )
-
   return (
     <ModuleLayout title="Publicação de Vídeos" emoji="📤" description="YouTube e Spotify" color="text-rose-600" bgColor="bg-rose-50">
 
@@ -278,7 +285,7 @@ export default function PublicacaoVideo() {
           </div>
 
           {/* ── 1. Upload ── */}
-          <CheckRow idx={IDX_UPLOAD} label="Fazer upload do vídeo">
+          <CheckRow checked={ytChecks[IDX_UPLOAD]} onToggle={() => toggleCheck(IDX_UPLOAD)} label="Fazer upload do vídeo">
             <div className="flex flex-wrap gap-2">
               <a
                 href={YOUTUBE_STUDIO[idioma]}
@@ -305,7 +312,7 @@ export default function PublicacaoVideo() {
           </CheckRow>
 
           {/* ── 2. Título ── */}
-          <CheckRow idx={IDX_TITULO} label="Título">
+          <CheckRow checked={ytChecks[IDX_TITULO]} onToggle={() => toggleCheck(IDX_TITULO)} label="Título">
             <div className="flex gap-2">
               <input
                 className="input flex-1"
@@ -324,7 +331,7 @@ export default function PublicacaoVideo() {
           </CheckRow>
 
           {/* ── 3. Descrição ── */}
-          <CheckRow idx={IDX_DESCRICAO} label="Descrição">
+          <CheckRow checked={ytChecks[IDX_DESCRICAO]} onToggle={() => toggleCheck(IDX_DESCRICAO)} label="Descrição">
             <div className="space-y-2">
               <textarea
                 className="input resize-none w-full"
@@ -344,7 +351,7 @@ export default function PublicacaoVideo() {
           </CheckRow>
 
           {/* ── 4. Miniatura ── */}
-          <CheckRow idx={IDX_MINIATURA} label="Imagem Miniatura">
+          <CheckRow checked={ytChecks[IDX_MINIATURA]} onToggle={() => toggleCheck(IDX_MINIATURA)} label="Imagem Miniatura">
             <div className="flex flex-wrap gap-2 items-center">
               <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
                 <Image size={12} /> Fazer upload no YouTube Studio
@@ -366,7 +373,7 @@ export default function PublicacaoVideo() {
           </CheckRow>
 
           {/* ── 5. Tags ── */}
-          <CheckRow idx={IDX_TAGS} label="Tags">
+          <CheckRow checked={ytChecks[IDX_TAGS]} onToggle={() => toggleCheck(IDX_TAGS)} label="Tags">
             <a
               href="https://rapidtags.io/generator"
               target="_blank"
@@ -379,8 +386,8 @@ export default function PublicacaoVideo() {
           </CheckRow>
 
           {/* ── 6. Vídeo anterior ── */}
-          <CheckRow idx={IDX_VIDEO_ANTERIOR} label="Adicionar vídeo anterior (tela final)">
-            <div className="flex gap-2">
+          <CheckRow checked={ytChecks[IDX_VIDEO_ANTERIOR]} onToggle={() => toggleCheck(IDX_VIDEO_ANTERIOR)} label="Adicionar vídeo anterior (tela final)">
+            <div className="flex gap-2 mb-2">
               <input
                 className="input flex-1"
                 placeholder="https://youtube.com/watch?v=..."
@@ -395,11 +402,21 @@ export default function PublicacaoVideo() {
                 {copiado === 'videoAnterior' ? 'Copiado!' : 'Copiar'}
               </button>
             </div>
-            <p className="text-xs text-gray-400 mt-1">Aparece no final do vídeo para o espectador assistir o episódio anterior.</p>
+            <a
+              href="https://studio.youtube.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 text-xs font-medium rounded-lg hover:bg-red-200 transition-colors w-fit mb-2"
+            >
+              <ExternalLink size={12} /> Abrir Editor YouTube
+            </a>
+            <p className="text-xs text-gray-400">
+              📍 No YouTube Studio: abra o vídeo → Editor → Tela final → Adicionar elemento → Vídeo → cole o link
+            </p>
           </CheckRow>
 
           {/* ── 7. Publicado ── */}
-          <CheckRow idx={IDX_PUBLICADO} label="Publicado">
+          <CheckRow checked={ytChecks[IDX_PUBLICADO]} onToggle={() => toggleCheck(IDX_PUBLICADO)} label="Publicado">
             <button
               onClick={salvarPublicacao}
               className="flex items-center gap-1.5 px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors"
