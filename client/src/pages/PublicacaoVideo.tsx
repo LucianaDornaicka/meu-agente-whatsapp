@@ -1,17 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import ModuleLayout from '@/components/ModuleLayout'
 import { ExternalLink, Copy, CheckCircle2, Circle, FolderOpen, Image, Tag, Check } from 'lucide-react'
 
 type Plataforma = 'youtube' | 'spotify'
 type Idioma = 'pt' | 'es' | 'en'
-
-interface EpisodioResumo {
-  id: string
-  titulo: string
-  pastaNome: string
-  pastaAtual: string
-  etapaAtual: string
-}
 
 interface PublicacaoRegistro {
   id: string
@@ -48,25 +40,27 @@ interface FormSpotify {
   hora: string
 }
 
-function CheckRow({ checked, onToggle, label, children }: {
+function CheckRow({ checked, onToggle, label, children, sub }: {
   checked: boolean
   onToggle: () => void
   label: string
   children: React.ReactNode
+  sub?: React.ReactNode
 }) {
   return (
-    <div className={`rounded-xl border transition-all ${checked ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200'}`}>
-      <div className="flex items-start gap-3 p-3">
-        <button onClick={onToggle} className="mt-0.5 flex-shrink-0">
+    <div className={`py-2.5 px-3 transition-colors ${checked ? 'bg-green-50' : ''}`}>
+      <div className="flex items-center gap-2">
+        <button onClick={onToggle} className="flex-shrink-0">
           {checked
-            ? <CheckCircle2 size={18} className="text-green-500" />
-            : <Circle size={18} className="text-gray-300" />}
+            ? <CheckCircle2 size={16} className="text-green-500" />
+            : <Circle size={16} className="text-gray-300" />}
         </button>
-        <div className="flex-1 min-w-0">
-          <p className={`text-sm font-medium mb-2 ${checked ? 'text-green-700 line-through' : 'text-gray-800'}`}>{label}</p>
+        <span className={`text-sm flex-shrink-0 w-36 ${checked ? 'text-gray-400 line-through' : 'text-gray-700 font-medium'}`}>{label}</span>
+        <div className="flex-1 flex items-center gap-1.5 justify-end flex-wrap">
           {children}
         </div>
       </div>
+      {sub && <div className="ml-[152px] mt-1.5">{sub}</div>}
     </div>
   )
 }
@@ -92,20 +86,8 @@ export default function PublicacaoVideo() {
   const [plataforma, setPlataforma] = useState<Plataforma>('youtube')
   const [idioma, setIdioma] = useState<Idioma>('pt')
 
-  // ── Episódios ──────────────────────────────────────────────────────────────
-  const [episodios, setEpisodios] = useState<EpisodioResumo[]>([])
-  const [epId, setEpId] = useState<string>('')
-  const ep = episodios.find(e => e.id === epId) ?? null
-
-  useEffect(() => {
-    fetch('/api/episodios', { headers: authHeaders() })
-      .then(r => r.ok ? r.json() : [])
-      .then((lista: EpisodioResumo[]) => {
-        setEpisodios(lista)
-        if (lista.length > 0 && !epId) setEpId(lista[0].id)
-      })
-      .catch(() => {})
-  }, [])
+  // ── Episódio (texto livre) ─────────────────────────────────────────────────
+  const [nomeEpisodio, setNomeEpisodio] = useState('')
 
   // ── Checklist YT (por idioma) ──────────────────────────────────────────────
   const [checks, setChecks] = useState<Record<Idioma, boolean[]>>({
@@ -134,10 +116,10 @@ export default function PublicacaoVideo() {
   const salvarPublicacao = () => {
     const nova: PublicacaoRegistro = {
       id: Date.now().toString(),
-      titulo: titulos[idioma] || ep?.titulo || '(sem título)',
+      titulo: titulos[idioma] || '(sem título)',
       idioma,
       data: new Date().toLocaleDateString('pt-BR'),
-      episodio: ep?.pastaNome || '',
+      episodio: nomeEpisodio,
     }
     const lista = [nova, ...publicacoes]
     setPublicacoes(lista)
@@ -157,14 +139,6 @@ export default function PublicacaoVideo() {
     navigator.clipboard.writeText(texto).catch(() => {})
     setCopiado(key)
     setTimeout(() => setCopiado(null), 1500)
-  }
-
-  const abrirPastaEpisodio = async () => {
-    if (!ep?.pastaAtual) return
-    await fetch('/api/videos/abrir-pasta', {
-      method: 'POST', headers: authHeaders(),
-      body: JSON.stringify({ pasta: ep.pastaAtual }),
-    })
   }
 
   const abrirPastaVideos = async () => {
@@ -248,34 +222,20 @@ export default function PublicacaoVideo() {
       {plataforma === 'youtube' && (
         <div className="space-y-3">
 
-          {/* Seletor de episódio */}
-          <div className="card p-3">
-            <label className="label mb-1">Episódio sendo publicado</label>
-            {episodios.length === 0 ? (
-              <p className="text-xs text-gray-400">Nenhum episódio encontrado. Crie um no módulo de Criação de Vídeos.</p>
-            ) : (
-              <select
-                className="input"
-                value={epId}
-                onChange={e => setEpId(e.target.value)}
-              >
-                {episodios.map(e => (
-                  <option key={e.id} value={e.id}>
-                    {e.titulo || e.pastaNome || `Episódio ${e.id}`}
-                  </option>
-                ))}
-              </select>
-            )}
-            {ep?.pastaNome && (
-              <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
-                <FolderOpen size={11} /> {ep.pastaNome}
-              </p>
-            )}
+          {/* Episódio */}
+          <div className="flex items-center gap-2 px-1">
+            <span className="text-xs text-gray-500 flex-shrink-0">Episódio:</span>
+            <input
+              className="input flex-1 py-1 text-sm"
+              placeholder="Nome do episódio atual"
+              value={nomeEpisodio}
+              onChange={e => setNomeEpisodio(e.target.value)}
+            />
           </div>
 
           {/* Progresso */}
           <div className="flex items-center justify-between px-1">
-            <p className="text-xs text-gray-500">{concluidos} / {TOTAL_STEPS} itens concluídos</p>
+            <p className="text-xs text-gray-400">{concluidos} / {TOTAL_STEPS} concluídos</p>
             <button
               onClick={() => setChecks(c => ({ ...c, [idioma]: Array(TOTAL_STEPS).fill(false) }))}
               className="text-xs text-gray-400 hover:text-gray-600"
@@ -284,150 +244,117 @@ export default function PublicacaoVideo() {
             </button>
           </div>
 
-          {/* ── 1. Upload ── */}
-          <CheckRow checked={ytChecks[IDX_UPLOAD]} onToggle={() => toggleCheck(IDX_UPLOAD)} label="Fazer upload do vídeo">
-            <div className="flex flex-wrap gap-2">
-              <a
-                href={YOUTUBE_STUDIO[idioma]}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white text-xs font-medium rounded-lg hover:bg-red-600 transition-colors"
-              >
-                <ExternalLink size={12} /> Abrir YouTube Studio
-              </a>
-              <button
-                onClick={abrirPastaEpisodio}
-                disabled={!ep?.pastaAtual}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-40"
-              >
-                <FolderOpen size={12} /> 📁 Abrir
-              </button>
-              <button
-                onClick={abrirPastaVideos}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                <FolderOpen size={12} /> 📁 Todos
-              </button>
-            </div>
-          </CheckRow>
+          {/* Checklist */}
+          <div className="card overflow-hidden divide-y divide-gray-100">
 
-          {/* ── 2. Título ── */}
-          <CheckRow checked={ytChecks[IDX_TITULO]} onToggle={() => toggleCheck(IDX_TITULO)} label="Título">
-            <div className="flex gap-2">
+            {/* 1. Upload */}
+            <CheckRow checked={ytChecks[IDX_UPLOAD]} onToggle={() => toggleCheck(IDX_UPLOAD)} label="Upload do vídeo">
+              <a href={YOUTUBE_STUDIO[idioma]} target="_blank" rel="noopener noreferrer"
+                className="btn-xs bg-red-500 text-white hover:bg-red-600">
+                <ExternalLink size={11} /> Abrir Studio
+              </a>
+              <button onClick={abrirPastaVideos} className="btn-xs">
+                <FolderOpen size={11} /> 📁 Todos
+              </button>
+            </CheckRow>
+
+            {/* 2. Título */}
+            <CheckRow checked={ytChecks[IDX_TITULO]} onToggle={() => toggleCheck(IDX_TITULO)} label="Título">
               <input
-                className="input flex-1"
+                className="input py-1 text-xs flex-1 min-w-0"
                 placeholder="Título do vídeo"
                 value={titulos[idioma]}
                 onChange={e => setTitulos(t => ({ ...t, [idioma]: e.target.value }))}
               />
-              <button
-                onClick={() => copiar('titulo', titulos[idioma])}
-                className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${copiado === 'titulo' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                {copiado === 'titulo' ? <Check size={12} /> : <Copy size={12} />}
+              <button onClick={() => copiar('titulo', titulos[idioma])}
+                className={`btn-xs flex-shrink-0 ${copiado === 'titulo' ? 'bg-green-100 text-green-600' : ''}`}>
+                {copiado === 'titulo' ? <Check size={11} /> : <Copy size={11} />}
                 {copiado === 'titulo' ? 'Copiado!' : 'Copiar'}
               </button>
-            </div>
-          </CheckRow>
+            </CheckRow>
 
-          {/* ── 3. Descrição ── */}
-          <CheckRow checked={ytChecks[IDX_DESCRICAO]} onToggle={() => toggleCheck(IDX_DESCRICAO)} label="Descrição">
-            <div className="space-y-2">
+            {/* 3. Descrição */}
+            <CheckRow
+              checked={ytChecks[IDX_DESCRICAO]}
+              onToggle={() => toggleCheck(IDX_DESCRICAO)}
+              label="Descrição"
+              sub={
+                <button onClick={() => copiar('descricao', descricoes[idioma])}
+                  className={`btn-xs ${copiado === 'descricao' ? 'bg-green-100 text-green-600' : ''}`}>
+                  {copiado === 'descricao' ? <Check size={11} /> : <Copy size={11} />}
+                  {copiado === 'descricao' ? 'Copiado!' : 'Copiar'}
+                </button>
+              }
+            >
               <textarea
-                className="input resize-none w-full"
-                rows={4}
+                className="input py-1 text-xs flex-1 min-w-0 resize-none"
+                rows={3}
                 placeholder="Descrição do vídeo..."
                 value={descricoes[idioma]}
                 onChange={e => setDescricoes(d => ({ ...d, [idioma]: e.target.value }))}
               />
-              <button
-                onClick={() => copiar('descricao', descricoes[idioma])}
-                className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${copiado === 'descricao' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                {copiado === 'descricao' ? <Check size={12} /> : <Copy size={12} />}
-                {copiado === 'descricao' ? 'Copiado!' : 'Copiar Descrição'}
-              </button>
-            </div>
-          </CheckRow>
+            </CheckRow>
 
-          {/* ── 4. Miniatura ── */}
-          <CheckRow checked={ytChecks[IDX_MINIATURA]} onToggle={() => toggleCheck(IDX_MINIATURA)} label="Imagem Miniatura">
-            <div className="flex flex-wrap gap-2 items-center">
-              <div className="flex items-center gap-1 text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
-                <Image size={12} /> Fazer upload no YouTube Studio
-              </div>
-              <button
-                onClick={abrirPastaEpisodio}
-                disabled={!ep?.pastaAtual}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-40"
-              >
-                <FolderOpen size={12} /> 📁 Abrir
+            {/* 4. Miniatura */}
+            <CheckRow checked={ytChecks[IDX_MINIATURA]} onToggle={() => toggleCheck(IDX_MINIATURA)} label="Miniatura">
+              <span className="text-xs text-amber-600 flex items-center gap-1">
+                <Image size={11} /> Upload no Studio
+              </span>
+              <button onClick={abrirPastaVideos} className="btn-xs">
+                <FolderOpen size={11} /> 📁 Todos
               </button>
-              <button
-                onClick={abrirPastaVideos}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                <FolderOpen size={12} /> 📁 Todos
-              </button>
-            </div>
-          </CheckRow>
+            </CheckRow>
 
-          {/* ── 5. Tags ── */}
-          <CheckRow checked={ytChecks[IDX_TAGS]} onToggle={() => toggleCheck(IDX_TAGS)} label="Tags">
-            <a
-              href="https://rapidtags.io/generator"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-100 text-violet-700 text-xs font-medium rounded-lg hover:bg-violet-200 transition-colors w-fit"
+            {/* 5. Tags */}
+            <CheckRow checked={ytChecks[IDX_TAGS]} onToggle={() => toggleCheck(IDX_TAGS)} label="Tags">
+              <a href="https://rapidtags.io/generator" target="_blank" rel="noopener noreferrer"
+                className="btn-xs bg-violet-100 text-violet-700 hover:bg-violet-200">
+                <Tag size={11} /> Gerar Tags
+              </a>
+              <span className="text-xs text-gray-400">"Mostrar Mais" no Studio</span>
+            </CheckRow>
+
+            {/* 6. Vídeo anterior */}
+            <CheckRow
+              checked={ytChecks[IDX_VIDEO_ANTERIOR]}
+              onToggle={() => toggleCheck(IDX_VIDEO_ANTERIOR)}
+              label="Vídeo anterior"
+              sub={
+                <div className="space-y-1">
+                  <a href="https://studio.youtube.com" target="_blank" rel="noopener noreferrer"
+                    className="btn-xs bg-red-100 text-red-700 hover:bg-red-200 w-fit">
+                    <ExternalLink size={11} /> Abrir Editor YouTube
+                  </a>
+                  <p className="text-xs text-gray-400">📍 Vídeo → Editor → Tela final → Adicionar elemento → Vídeo → cole o link</p>
+                </div>
+              }
             >
-              <Tag size={12} /> Gerar Tags
-            </a>
-            <p className="text-xs text-gray-400 mt-1.5">Adicionar em "Mostrar Mais" no YouTube Studio.</p>
-          </CheckRow>
-
-          {/* ── 6. Vídeo anterior ── */}
-          <CheckRow checked={ytChecks[IDX_VIDEO_ANTERIOR]} onToggle={() => toggleCheck(IDX_VIDEO_ANTERIOR)} label="Adicionar vídeo anterior (tela final)">
-            <div className="flex gap-2 mb-2">
               <input
-                className="input flex-1"
+                className="input py-1 text-xs flex-1 min-w-0"
                 placeholder="https://youtube.com/watch?v=..."
                 value={videosAnteriores[idioma]}
                 onChange={e => setVideosAnteriores(v => ({ ...v, [idioma]: e.target.value }))}
               />
-              <button
-                onClick={() => copiar('videoAnterior', videosAnteriores[idioma])}
-                className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${copiado === 'videoAnterior' ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                {copiado === 'videoAnterior' ? <Check size={12} /> : <Copy size={12} />}
+              <button onClick={() => copiar('videoAnterior', videosAnteriores[idioma])}
+                className={`btn-xs flex-shrink-0 ${copiado === 'videoAnterior' ? 'bg-green-100 text-green-600' : ''}`}>
+                {copiado === 'videoAnterior' ? <Check size={11} /> : <Copy size={11} />}
                 {copiado === 'videoAnterior' ? 'Copiado!' : 'Copiar'}
               </button>
-            </div>
-            <a
-              href="https://studio.youtube.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-red-100 text-red-700 text-xs font-medium rounded-lg hover:bg-red-200 transition-colors w-fit mb-2"
-            >
-              <ExternalLink size={12} /> Abrir Editor YouTube
-            </a>
-            <p className="text-xs text-gray-400">
-              📍 No YouTube Studio: abra o vídeo → Editor → Tela final → Adicionar elemento → Vídeo → cole o link
-            </p>
-          </CheckRow>
+            </CheckRow>
 
-          {/* ── 7. Publicado ── */}
-          <CheckRow checked={ytChecks[IDX_PUBLICADO]} onToggle={() => toggleCheck(IDX_PUBLICADO)} label="Publicado">
-            <button
-              onClick={salvarPublicacao}
-              className="flex items-center gap-1.5 px-4 py-2 bg-green-500 text-white text-sm font-medium rounded-lg hover:bg-green-600 transition-colors"
-            >
-              <CheckCircle2 size={14} /> Marcar como Publicado
-            </button>
-          </CheckRow>
+            {/* 7. Publicado */}
+            <CheckRow checked={ytChecks[IDX_PUBLICADO]} onToggle={() => toggleCheck(IDX_PUBLICADO)} label="Publicado">
+              <button onClick={salvarPublicacao}
+                className="btn-xs bg-green-500 text-white hover:bg-green-600">
+                <CheckCircle2 size={11} /> Marcar como Publicado
+              </button>
+            </CheckRow>
 
-          {/* ── Lista de publicações ── */}
+          </div>
+
+          {/* Lista de publicações */}
           {publicacoes.length > 0 && (
-            <div className="card p-4 mt-2">
+            <div className="card p-4">
               <h3 className="text-sm font-semibold text-gray-800 mb-3">Vídeos Publicados</h3>
               <div className="space-y-2">
                 {publicacoes.map(p => (
@@ -439,10 +366,8 @@ export default function PublicacaoVideo() {
                         {p.episodio && ` · ${p.episodio}`}
                       </p>
                     </div>
-                    <button
-                      onClick={() => removerPublicacao(p.id)}
-                      className="flex-shrink-0 text-xs text-gray-400 hover:text-red-500 transition-colors px-2 py-1"
-                    >
+                    <button onClick={() => removerPublicacao(p.id)}
+                      className="flex-shrink-0 text-xs text-gray-400 hover:text-red-500 transition-colors px-2 py-1">
                       ✕
                     </button>
                   </div>
