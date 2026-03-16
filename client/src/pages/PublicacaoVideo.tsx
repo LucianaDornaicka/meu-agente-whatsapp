@@ -11,10 +11,22 @@ const IDIOMAS = [
   { id: 'en' as Idioma, label: '🇺🇸 EN', nome: 'Inglês' },
 ]
 
+const YOUTUBE_CHANNEL_IDS = {
+  pt: 'UCaVxP3Jj67Ko-f4stRabrkA',
+  es: 'UC7DwigoUdNYXAkv0d-KehVQ',
+  en: 'UC1TB05Es-2GHi8RLuYienkQ',
+}
+
 const YOUTUBE_LINKS = {
-  pt: 'https://studio.youtube.com/channel/UCaVxP3Jj67Ko-f4stRabrkA',
-  es: 'https://studio.youtube.com/channel/UC7DwigoUdNYXAkv0d-KehVQ',
-  en: 'https://studio.youtube.com/channel/UC1TB05Es-2GHi8RLuYienkQ',
+  pt: `https://studio.youtube.com/channel/${YOUTUBE_CHANNEL_IDS.pt}`,
+  es: `https://studio.youtube.com/channel/${YOUTUBE_CHANNEL_IDS.es}`,
+  en: `https://studio.youtube.com/channel/${YOUTUBE_CHANNEL_IDS.en}`,
+}
+
+const YOUTUBE_UPLOAD_LINKS = {
+  pt: `https://studio.youtube.com/channel/${YOUTUBE_CHANNEL_IDS.pt}/videos/upload`,
+  es: `https://studio.youtube.com/channel/${YOUTUBE_CHANNEL_IDS.es}/videos/upload`,
+  en: `https://studio.youtube.com/channel/${YOUTUBE_CHANNEL_IDS.en}/videos/upload`,
 }
 
 const SPOTIFY_LINKS = {
@@ -213,7 +225,18 @@ export default function PublicacaoVideo() {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="label mb-0">Descrição</label>
-                <CopyBtn campo="descricao" />
+                <div className="flex items-center gap-1.5">
+                  <a
+                    href={YOUTUBE_UPLOAD_LINKS[idioma]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs flex items-center gap-1 px-2 py-0.5 rounded-md bg-red-100 text-red-600 hover:bg-red-200 transition-all"
+                  >
+                    <ExternalLink size={11} />
+                    Abrir no YouTube Studio
+                  </a>
+                  <CopyBtn campo="descricao" />
+                </div>
               </div>
               <textarea className="input resize-none" rows={4} placeholder="Descrição do vídeo..." value={formsYT[idioma].descricao} onChange={e => updateYT('descricao', e.target.value)} />
             </div>
@@ -241,7 +264,18 @@ export default function PublicacaoVideo() {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="label mb-0">Tags</label>
-                <CopyBtn campo="tags" />
+                <div className="flex items-center gap-1.5">
+                  <a
+                    href={`https://keywordtool.io/youtube?keyword=${encodeURIComponent(formsYT[idioma].titulo)}&country=BR&language=pt`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs flex items-center gap-1 px-2 py-0.5 rounded-md bg-violet-100 text-violet-600 hover:bg-violet-200 transition-all"
+                  >
+                    <ExternalLink size={11} />
+                    Gerar Tags
+                  </a>
+                  <CopyBtn campo="tags" />
+                </div>
               </div>
               <input className="input" placeholder="tag1, tag2, tag3..." value={formsYT[idioma].tags} onChange={e => updateYT('tags', e.target.value)} />
               <p className="text-xs text-gray-400 mt-1">Acessível em "Mostrar Mais" no YouTube Studio</p>
