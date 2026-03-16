@@ -264,18 +264,7 @@ export default function PublicacaoVideo() {
             </CheckRow>
 
             {/* 3. Descrição */}
-            <CheckRow
-              checked={ytChecks[IDX_DESCRICAO]}
-              onToggle={() => toggleCheck(IDX_DESCRICAO)}
-              label="📝 Descrição"
-              sub={
-                <button onClick={() => copiar('descricao', descricoes[idioma])}
-                  className={`btn-xs ${copiado === 'descricao' ? 'bg-green-100 text-green-600' : ''}`}>
-                  {copiado === 'descricao' ? <Check size={11} /> : <Copy size={11} />}
-                  {copiado === 'descricao' ? 'Copiado!' : 'Copiar'}
-                </button>
-              }
-            >
+            <CheckRow checked={ytChecks[IDX_DESCRICAO]} onToggle={() => toggleCheck(IDX_DESCRICAO)} label="📝 Descrição">
               <textarea
                 className="input py-1 text-xs flex-1 min-w-0 resize-none"
                 rows={1}
@@ -283,6 +272,11 @@ export default function PublicacaoVideo() {
                 value={descricoes[idioma]}
                 onChange={e => setDescricoes(d => ({ ...d, [idioma]: e.target.value }))}
               />
+              <button onClick={() => copiar('descricao', descricoes[idioma])}
+                className={`btn-xs flex-shrink-0 ${copiado === 'descricao' ? 'bg-green-100 text-green-600' : ''}`}>
+                {copiado === 'descricao' ? <Check size={11} /> : <Copy size={11} />}
+                {copiado === 'descricao' ? 'Copiado!' : 'Copiar'}
+              </button>
             </CheckRow>
 
             {/* 4. Miniatura */}
@@ -304,23 +298,14 @@ export default function PublicacaoVideo() {
             </CheckRow>
 
             {/* 6. Vídeo anterior */}
-            <CheckRow
-              checked={ytChecks[IDX_VIDEO_ANTERIOR]}
-              onToggle={() => toggleCheck(IDX_VIDEO_ANTERIOR)}
-              label="📺 Vídeo anterior"
-              sub={
-                <div className="space-y-1">
-                  <a href="https://studio.youtube.com" target="_blank" rel="noopener noreferrer"
-                    className="btn-xs bg-red-100 text-red-700 hover:bg-red-200 w-fit">
-                    <ExternalLink size={11} /> Abrir Editor YouTube
-                  </a>
-                  <p className="text-xs text-gray-400">📍 Vídeo → Editor → Tela final → Adicionar elemento → Vídeo → cole o link</p>
-                </div>
-              }
-            >
+            <CheckRow checked={ytChecks[IDX_VIDEO_ANTERIOR]} onToggle={() => toggleCheck(IDX_VIDEO_ANTERIOR)} label="📺 Vídeo anterior">
+              <a href="https://studio.youtube.com" target="_blank" rel="noopener noreferrer"
+                className="text-xs text-gray-500 flex-shrink-0">
+                — <span className="text-red-600 hover:underline">Abrir YouTube</span>
+              </a>
               <input
                 className="input py-1 text-xs flex-1 min-w-0"
-                placeholder="https://youtube.com/watch?v=..."
+                placeholder="vídeo → editor → tela final → adicionar elemento → vídeo → cole o link"
                 value={videosAnteriores[idioma]}
                 onChange={e => setVideosAnteriores(v => ({ ...v, [idioma]: e.target.value }))}
               />
@@ -415,18 +400,7 @@ export default function PublicacaoVideo() {
               </CheckRow>
 
               {/* 3. Descrição */}
-              <CheckRow
-                checked={spChecks[IDX_SP_DESCRICAO]}
-                onToggle={() => toggleSP(IDX_SP_DESCRICAO)}
-                label="📝 Descrição"
-                sub={
-                  <button onClick={() => copiar('spDescricao', descricoesSP[idioma])}
-                    className={`btn-xs ${copiado === 'spDescricao' ? 'bg-green-100 text-green-600' : ''}`}>
-                    {copiado === 'spDescricao' ? <Check size={11} /> : <Copy size={11} />}
-                    {copiado === 'spDescricao' ? 'Copiado!' : 'Copiar'}
-                  </button>
-                }
-              >
+              <CheckRow checked={spChecks[IDX_SP_DESCRICAO]} onToggle={() => toggleSP(IDX_SP_DESCRICAO)} label="📝 Descrição">
                 <textarea
                   className="input py-1 text-xs flex-1 min-w-0 resize-none"
                   rows={1}
@@ -434,6 +408,11 @@ export default function PublicacaoVideo() {
                   value={descricoesSP[idioma]}
                   onChange={e => setDescricoesSP(d => ({ ...d, [idioma]: e.target.value }))}
                 />
+                <button onClick={() => copiar('spDescricao', descricoesSP[idioma])}
+                  className={`btn-xs flex-shrink-0 ${copiado === 'spDescricao' ? 'bg-green-100 text-green-600' : ''}`}>
+                  {copiado === 'spDescricao' ? <Check size={11} /> : <Copy size={11} />}
+                  {copiado === 'spDescricao' ? 'Copiado!' : 'Copiar'}
+                </button>
               </CheckRow>
 
               {/* 4. Miniatura */}
