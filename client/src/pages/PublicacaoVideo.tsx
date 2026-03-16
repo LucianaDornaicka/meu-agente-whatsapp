@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import ModuleLayout from '@/components/ModuleLayout'
-import { ExternalLink, Copy, CheckCircle2 } from 'lucide-react'
+import { ExternalLink, Copy, CheckCircle2, Image } from 'lucide-react'
 
 type Plataforma = 'youtube' | 'spotify'
 type Idioma = 'pt' | 'es' | 'en'
@@ -20,7 +20,7 @@ const YOUTUBE_LINKS = {
 const SPOTIFY_LINKS = {
   pt: 'https://creators.spotify.com/pod/show/6eksxTNuLAKqkEFf5FCsRR/home',
   es: 'https://creators.spotify.com/pod/show/0aqwiMj5HYw3APjH4q8ban/home',
-  en: 'https://creators.spotify.com/pod/show/3KnWl3krZLKt8iJThUd6DA/home',
+  en: 'https://creators.spotify.com/pod/show/3KnWI3krZLKt8iJThUd6DA/home',
 }
 
 const PLAYLISTS_YT = ['Bíblia', 'Devocional', 'Estudo Bíblico', 'Sermão', 'Outro']
@@ -33,6 +33,7 @@ interface FormYoutube {
   data: string
   hora: string
   publico: boolean
+  episodioAnteriorUrl: string
 }
 
 interface FormSpotify {
@@ -44,15 +45,41 @@ interface FormSpotify {
   hora: string
 }
 
+const YT_STEPS = [
+  '📁 Fazer upload do vídeo pronto',
+  '✏️ Título',
+  '📝 Descrição',
+  '🖼️ Imagem Miniatura',
+  '📋 Selecionar Playlist',
+  '🚫 Não é conteúdo para crianças',
+  '🏷️ Mostrar Mais → Tags',
+  '▶️ Avançar → Avançar',
+  '🌐 Público → Programar: Data e Horário',
+  '📺 Tela final → adicionar vídeo do episódio anterior',
+]
+
+const SP_STEPS = [
+  '📁 Novo Episódio → Selecionar Arquivo',
+  '✏️ Título',
+  '📝 Descrição',
+  '🖼️ Miniatura',
+  '🔢 Número da Temporada',
+  '🔢 Número do Episódio',
+  '🎨 Arte do Episódio',
+  '📅 Programar: Data e Hora',
+]
+
 export default function PublicacaoVideo() {
   const [plataforma, setPlataforma] = useState<Plataforma>('youtube')
   const [idioma, setIdioma] = useState<Idioma>('pt')
   const [copiado, setCopiado] = useState<string | null>(null)
+  const [stepsYT, setStepsYT] = useState<boolean[]>(Array(YT_STEPS.length).fill(false))
+  const [stepsSP, setStepsSP] = useState<boolean[]>(Array(SP_STEPS.length).fill(false))
 
   const [formsYT, setFormsYT] = useState<Record<Idioma, FormYoutube>>({
-    pt: { titulo: '', descricao: '', playlist: 'Bíblia', tags: '', data: '', hora: '', publico: true },
-    es: { titulo: '', descricao: '', playlist: 'Bíblia', tags: '', data: '', hora: '', publico: true },
-    en: { titulo: '', descricao: '', playlist: 'Bíblia', tags: '', data: '', hora: '', publico: true },
+    pt: { titulo: '', descricao: '', playlist: 'Bíblia', tags: '', data: '', hora: '', publico: true, episodioAnteriorUrl: '' },
+    es: { titulo: '', descricao: '', playlist: 'Bíblia', tags: '', data: '', hora: '', publico: true, episodioAnteriorUrl: '' },
+    en: { titulo: '', descricao: '', playlist: 'Bíblia', tags: '', data: '', hora: '', publico: true, episodioAnteriorUrl: '' },
   })
 
   const [formsSpotify, setFormsSpotify] = useState<Record<Idioma, FormSpotify>>({
@@ -89,9 +116,21 @@ export default function PublicacaoVideo() {
     setFormsSpotify(f => ({ ...f, [idioma]: { ...f[idioma], [campo]: valor } }))
   }
 
+  const toggleStep = (steps: boolean[], setSteps: (s: boolean[]) => void, idx: number) => {
+    const novo = [...steps]
+    novo[idx] = !novo[idx]
+    setSteps(novo)
+  }
+
+  const resetSteps = (setSteps: (s: boolean[]) => void, len: number) => {
+    setSteps(Array(len).fill(false))
+  }
+
   const CopyBtn = ({ campo }: { campo: string }) => (
-    <button onClick={() => copiarParaTodos(campo as any)}
-      className={`text-xs flex items-center gap-1 px-2 py-0.5 rounded-md transition-all ${copiado === campo ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+    <button
+      onClick={() => copiarParaTodos(campo as any)}
+      className={`text-xs flex items-center gap-1 px-2 py-0.5 rounded-md transition-all ${copiado === campo ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+    >
       {copiado === campo ? <CheckCircle2 size={11} /> : <Copy size={11} />}
       {copiado === campo ? 'Copiado!' : 'Copiar p/ todos'}
     </button>
@@ -99,6 +138,7 @@ export default function PublicacaoVideo() {
 
   return (
     <ModuleLayout title="Publicação de Vídeos" emoji="📤" description="YouTube e Spotify" color="text-rose-600" bgColor="bg-rose-50">
+
       {/* Plataforma */}
       <div className="flex gap-1 bg-gray-100 p-1 rounded-xl mb-4">
         {(['youtube', 'spotify'] as const).map(p => (
@@ -132,115 +172,188 @@ export default function PublicacaoVideo() {
 
       {/* YOUTUBE */}
       {plataforma === 'youtube' && (
-        <div className="card p-5 space-y-4">
-          <h3 className="font-semibold text-gray-900 text-sm">Checklist de Publicação — YouTube</h3>
-          <p className="text-xs text-gray-400">Enviar Vídeo → Título → Descrição → Miniatura → Playlist → Não é conteúdo para crianças → Tags → Avançar → Avançar → Público → Programar</p>
-
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="label mb-0">Título</label>
-              <CopyBtn campo="titulo" />
+        <div className="space-y-4">
+          {/* Checklist de passos */}
+          <div className="card p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-gray-900 text-sm">Checklist de Publicação</h3>
+              <button onClick={() => resetSteps(setStepsYT, YT_STEPS.length)} className="text-xs text-gray-400 hover:text-gray-600">Limpar</button>
             </div>
-            <input className="input" placeholder="Título do vídeo" value={formsYT[idioma].titulo} onChange={e => updateYT('titulo', e.target.value)} />
+            <div className="space-y-1.5">
+              {YT_STEPS.map((step, i) => (
+                <button
+                  key={i}
+                  onClick={() => toggleStep(stepsYT, setStepsYT, i)}
+                  className={`w-full flex items-center gap-2.5 text-left px-3 py-2 rounded-lg text-sm transition-all ${stepsYT[i] ? 'bg-green-50 text-green-700 line-through' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}`}
+                >
+                  <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center text-xs ${stepsYT[i] ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}`}>
+                    {stepsYT[i] ? '✓' : ''}
+                  </span>
+                  {step}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-2 text-center">
+              {stepsYT.filter(Boolean).length} / {YT_STEPS.length} concluídos
+            </p>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="label mb-0">Descrição</label>
-              <CopyBtn campo="descricao" />
-            </div>
-            <textarea className="input resize-none" rows={4} placeholder="Descrição do vídeo..." value={formsYT[idioma].descricao} onChange={e => updateYT('descricao', e.target.value)} />
-          </div>
+          {/* Formulário */}
+          <div className="card p-5 space-y-4">
+            <h3 className="font-semibold text-gray-900 text-sm">Dados para copiar</h3>
 
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="label mb-0">Playlist</label>
-              <CopyBtn campo="playlist" />
-            </div>
-            <select className="input" value={formsYT[idioma].playlist} onChange={e => updateYT('playlist', e.target.value)}>
-              {PLAYLISTS_YT.map(p => <option key={p}>{p}</option>)}
-            </select>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="label mb-0">Tags</label>
-              <CopyBtn campo="tags" />
-            </div>
-            <input className="input" placeholder="tag1, tag2, tag3..." value={formsYT[idioma].tags} onChange={e => updateYT('tags', e.target.value)} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">Data de publicação</label>
-              <input type="date" className="input" value={formsYT[idioma].data} onChange={e => updateYT('data', e.target.value)} />
+              <div className="flex items-center justify-between mb-1">
+                <label className="label mb-0">Título</label>
+                <CopyBtn campo="titulo" />
+              </div>
+              <input className="input" placeholder="Título do vídeo" value={formsYT[idioma].titulo} onChange={e => updateYT('titulo', e.target.value)} />
             </div>
-            <div>
-              <label className="label">Horário</label>
-              <input type="time" className="input" value={formsYT[idioma].hora} onChange={e => updateYT('hora', e.target.value)} />
-            </div>
-          </div>
 
-          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-700 space-y-1">
-            <p className="font-medium">Passos no YouTube Studio:</p>
-            <p>1. Enviar Vídeo → 2. Título → 3. Descrição → 4. Imagem Miniatura</p>
-            <p>5. Selecionar Playlist → 6. ❌ Não é conteúdo para crianças</p>
-            <p>7. Mostrar Mais → Tags → 8. Avançar → Avançar</p>
-            <p>9. Público → Programar: Data e Horário</p>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="label mb-0">Descrição</label>
+                <CopyBtn campo="descricao" />
+              </div>
+              <textarea className="input resize-none" rows={4} placeholder="Descrição do vídeo..." value={formsYT[idioma].descricao} onChange={e => updateYT('descricao', e.target.value)} />
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-sm text-amber-700">
+              <Image size={15} className="flex-shrink-0" />
+              <span>Lembrete: fazer upload da <strong>Imagem Miniatura</strong> no YouTube Studio</span>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="label mb-0">Playlist</label>
+                <CopyBtn campo="playlist" />
+              </div>
+              <select className="input" value={formsYT[idioma].playlist} onChange={e => updateYT('playlist', e.target.value)}>
+                {PLAYLISTS_YT.map(p => <option key={p}>{p}</option>)}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-3 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+              <span className="text-sm text-gray-700 flex-1">🚫 Não é conteúdo para crianças</span>
+              <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">Marcar essa opção</span>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="label mb-0">Tags</label>
+                <CopyBtn campo="tags" />
+              </div>
+              <input className="input" placeholder="tag1, tag2, tag3..." value={formsYT[idioma].tags} onChange={e => updateYT('tags', e.target.value)} />
+              <p className="text-xs text-gray-400 mt-1">Acessível em "Mostrar Mais" no YouTube Studio</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label">Data de publicação</label>
+                <input type="date" className="input" value={formsYT[idioma].data} onChange={e => updateYT('data', e.target.value)} />
+              </div>
+              <div>
+                <label className="label">Horário</label>
+                <input type="time" className="input" value={formsYT[idioma].hora} onChange={e => updateYT('hora', e.target.value)} />
+              </div>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="label mb-0">📺 Tela Final — URL do Episódio Anterior</label>
+                <CopyBtn campo="episodioAnteriorUrl" />
+              </div>
+              <input
+                className="input"
+                placeholder="https://youtube.com/watch?v=..."
+                value={formsYT[idioma].episodioAnteriorUrl}
+                onChange={e => updateYT('episodioAnteriorUrl', e.target.value)}
+              />
+              <p className="text-xs text-gray-400 mt-1">Aparece no final do vídeo para o espectador assistir o episódio anterior</p>
+            </div>
           </div>
         </div>
       )}
 
       {/* SPOTIFY */}
       {plataforma === 'spotify' && (
-        <div className="card p-5 space-y-4">
-          <h3 className="font-semibold text-gray-900 text-sm">Checklist de Publicação — Spotify</h3>
-          <p className="text-xs text-gray-400">Novo Episódio → Arquivo → Título → Descrição → Miniatura → Temporada → Episódio → Arte → Programar</p>
-
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="label mb-0">Título do Episódio</label>
-              <CopyBtn campo="titulo" />
+        <div className="space-y-4">
+          {/* Checklist de passos */}
+          <div className="card p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-gray-900 text-sm">Checklist de Publicação</h3>
+              <button onClick={() => resetSteps(setStepsSP, SP_STEPS.length)} className="text-xs text-gray-400 hover:text-gray-600">Limpar</button>
             </div>
-            <input className="input" placeholder="Título do episódio" value={formsSpotify[idioma].titulo} onChange={e => updateSpotify('titulo', e.target.value)} />
+            <div className="space-y-1.5">
+              {SP_STEPS.map((step, i) => (
+                <button
+                  key={i}
+                  onClick={() => toggleStep(stepsSP, setStepsSP, i)}
+                  className={`w-full flex items-center gap-2.5 text-left px-3 py-2 rounded-lg text-sm transition-all ${stepsSP[i] ? 'bg-green-50 text-green-700 line-through' : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}`}
+                >
+                  <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center text-xs ${stepsSP[i] ? 'bg-green-500 border-green-500 text-white' : 'border-gray-300'}`}>
+                    {stepsSP[i] ? '✓' : ''}
+                  </span>
+                  {step}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-gray-400 mt-2 text-center">
+              {stepsSP.filter(Boolean).length} / {SP_STEPS.length} concluídos
+            </p>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="label mb-0">Descrição</label>
-              <CopyBtn campo="descricao" />
-            </div>
-            <textarea className="input resize-none" rows={4} placeholder="Descrição do episódio..." value={formsSpotify[idioma].descricao} onChange={e => updateSpotify('descricao', e.target.value)} />
-          </div>
+          {/* Formulário */}
+          <div className="card p-5 space-y-4">
+            <h3 className="font-semibold text-gray-900 text-sm">Dados para copiar</h3>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="label">Número da Temporada</label>
-              <input type="number" className="input" value={formsSpotify[idioma].temporada} onChange={e => updateSpotify('temporada', e.target.value)} />
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-sm text-amber-700">
+              <Image size={15} className="flex-shrink-0" />
+              <span>Lembrete: selecionar o <strong>arquivo de áudio/vídeo</strong> primeiro no Spotify Creators</span>
             </div>
-            <div>
-              <label className="label">Número do Episódio</label>
-              <input type="number" className="input" placeholder="Ex: 42" value={formsSpotify[idioma].episodio} onChange={e => updateSpotify('episodio', e.target.value)} />
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="label">Data de publicação</label>
-              <input type="date" className="input" value={formsSpotify[idioma].data} onChange={e => updateSpotify('data', e.target.value)} />
+              <div className="flex items-center justify-between mb-1">
+                <label className="label mb-0">Título do Episódio</label>
+                <CopyBtn campo="titulo" />
+              </div>
+              <input className="input" placeholder="Título do episódio" value={formsSpotify[idioma].titulo} onChange={e => updateSpotify('titulo', e.target.value)} />
             </div>
-            <div>
-              <label className="label">Horário</label>
-              <input type="time" className="input" value={formsSpotify[idioma].hora} onChange={e => updateSpotify('hora', e.target.value)} />
-            </div>
-          </div>
 
-          <div className="bg-green-50 border border-green-100 rounded-lg p-3 text-xs text-green-700 space-y-1">
-            <p className="font-medium">Passos no Spotify Creators:</p>
-            <p>1. Novo Episódio → 2. Selecionar Arquivo de áudio</p>
-            <p>3. Título → 4. Descrição → 5. Miniatura</p>
-            <p>6. Número da Temporada → 7. Número do Episódio</p>
-            <p>8. Arte do Episódio → 9. Programar: Data e Hora</p>
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="label mb-0">Descrição</label>
+                <CopyBtn campo="descricao" />
+              </div>
+              <textarea className="input resize-none" rows={4} placeholder="Descrição do episódio..." value={formsSpotify[idioma].descricao} onChange={e => updateSpotify('descricao', e.target.value)} />
+            </div>
+
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2 text-sm text-amber-700">
+              <Image size={15} className="flex-shrink-0" />
+              <span>Lembrete: fazer upload da <strong>Miniatura</strong> e da <strong>Arte do Episódio</strong> no Spotify Creators</span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label">Número da Temporada</label>
+                <input type="number" className="input" value={formsSpotify[idioma].temporada} onChange={e => updateSpotify('temporada', e.target.value)} />
+              </div>
+              <div>
+                <label className="label">Número do Episódio</label>
+                <input type="number" className="input" placeholder="Ex: 42" value={formsSpotify[idioma].episodio} onChange={e => updateSpotify('episodio', e.target.value)} />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="label">Data de publicação</label>
+                <input type="date" className="input" value={formsSpotify[idioma].data} onChange={e => updateSpotify('data', e.target.value)} />
+              </div>
+              <div>
+                <label className="label">Horário</label>
+                <input type="time" className="input" value={formsSpotify[idioma].hora} onChange={e => updateSpotify('hora', e.target.value)} />
+              </div>
+            </div>
           </div>
         </div>
       )}
