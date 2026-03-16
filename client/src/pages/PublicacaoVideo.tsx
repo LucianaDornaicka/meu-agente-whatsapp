@@ -392,8 +392,8 @@ export default function PublicacaoVideo() {
               {/* 1. Novo Episódio */}
               <CheckRow checked={spChecks[IDX_SP_UPLOAD]} onToggle={() => toggleSP(IDX_SP_UPLOAD)} label="📁 Novo Episódio">
                 <a href={SPOTIFY_NEW_EP[idioma]} target="_blank" rel="noopener noreferrer"
-                  className="btn-xs bg-green-500 text-white hover:bg-green-600">
-                  <ExternalLink size={11} /> Abrir Spotify
+                  className="text-xs text-gray-500 mr-auto">
+                  — <span className="text-green-600 hover:underline">Upload</span>
                 </a>
                 <button onClick={abrirPastaVideos} className="btn-xs">
                   <FolderOpen size={11} /> 📁 Todos
@@ -430,7 +430,7 @@ export default function PublicacaoVideo() {
               >
                 <textarea
                   className="input py-1 text-xs flex-1 min-w-0 resize-none"
-                  rows={3}
+                  rows={1}
                   placeholder="Descrição do episódio..."
                   value={descricoesSP[idioma]}
                   onChange={e => setDescricoesSP(d => ({ ...d, [idioma]: e.target.value }))}
@@ -447,8 +447,8 @@ export default function PublicacaoVideo() {
               {/* 5. Tags */}
               <CheckRow checked={spChecks[IDX_SP_TAGS]} onToggle={() => toggleSP(IDX_SP_TAGS)} label="🏷️ Tags">
                 <a href="https://rapidtags.io/generator" target="_blank" rel="noopener noreferrer"
-                  className="btn-xs bg-violet-100 text-violet-700 hover:bg-violet-200">
-                  <Tag size={11} /> Gerar Tags
+                  className="text-xs text-gray-500 mr-auto">
+                  — <span className="text-violet-600 hover:underline">gerar tags</span>
                 </a>
               </CheckRow>
 
