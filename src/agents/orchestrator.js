@@ -62,6 +62,8 @@ export async function handle(mensagem, remetente) {
       salvarEstados();
     }
     else if (estadosCardapio[remetente] || texto === "cardápio" || texto === "cardapio" || texto === "c") {
+      console.log('DEBUG texto:', JSON.stringify(texto));
+      console.log('DEBUG: entrou no cardápio');
       resultado = await agenteCardapio(mensagem, remetente);
       salvarEstados();
     }
