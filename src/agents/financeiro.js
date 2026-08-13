@@ -1,30 +1,65 @@
 import { preencherGasto, ITENS } from '../services/googleFinanceiro.js';
 import { lerItensControleGastos, registrarGastoControle } from '../services/googleControleGastos.js';
- 
+
 export const estados = {};
- 
+
 const LINK_PLANILHA = 'https://docs.google.com/spreadsheets/d/1I7qD8n_Ms2cO_bpEW6j2j69IrL51PdvK2PWnLOa2DCE/edit';
+const LINK_CONTROLE_GASTOS = 'https://docs.google.com/spreadsheets/d/1Q9pOExGdGOL4eDFNQuxTE5Ve_Ia-x6B7SuMCAr2rqZ4/edit';
 const MESES_VALIDOS = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
- 
+
 function formatarReal(valor) {
   const numero = Number(valor) || 0;
   return `R$ ${numero.toFixed(2).replace('.', ',')}`;
 }
- 
+
 function menuItens( ) {
   let lista = '💰 *Qual item deseja registrar?*\n\n';
   ITENS.forEach((item, i) => { lista += `${i + 1}. ${item}\n`; });
   lista += '\nDigite o número do item ou *0* para sair.';
   return lista;
 }
- 
+
 function menuControleGastos(itens) {
   let lista = '📊 *Controle de Gastos — em qual item você gastou?*\n\n';
   itens.forEach((item, i) => { lista += `${i + 1}. ${item.nome}\n`; });
+  lista += `\n📎 Editar a planilha diretamente:\n${LINK_CONTROLE_GASTOS}\n`;
   lista += '\nDigite o número do item ou *0* para sair.';
   return lista;
 }
- 
+
+function barraProgresso(percentual, tamanho = 10) {
+  const p = Math.max(0, Math.min(1, percentual));
+  const preenchido = Math.round(p * tamanho);
+  return '🟩'.repeat(preenchido) + '⬜'.repeat(tamanho - preenchido);
+}
+
+function montarDashboardControle(itens) {
+  const categorias = ['Custo de Vida', 'Lazer', 'Conhecimento'];
+  let texto = '📊 *Dashboard — Controle de Gastos*\n';
+
+  categorias.forEach(categoria => {
+    const doGrupo = itens.filter(item => item.categoria === categoria);
+    if (!doGrupo.length) return;
+
+    const limiteTotal = doGrupo.reduce((soma, item) => soma + item.limite, 0);
+    const gastoTotal = doGrupo.reduce((soma, item) => soma + item.gastoAcumulado, 0);
+    const percentualGrupo = limiteTotal > 0 ? gastoTotal / limiteTotal : 0;
+
+    texto += `\n*${categoria}* — ${formatarReal(gastoTotal)} / ${formatarReal(limiteTotal)}\n`;
+    texto += `${barraProgresso(percentualGrupo)} ${Math.round(percentualGrupo * 100)}%\n`;
+
+    doGrupo.forEach(item => {
+      const percentualItem = item.limite > 0 ? item.gastoAcumulado / item.limite : 0;
+      const estourou = item.gastoAcumulado > item.limite;
+      const emoji = estourou ? '🔴' : percentualItem >= 0.8 ? '🟡' : '🟢';
+      texto += `${emoji} ${item.nome}: ${formatarReal(item.gastoAcumulado)} / ${formatarReal(item.limite)} (${Math.round(percentualItem * 100)}%)\n`;
+    });
+  });
+
+  texto += `\n📎 Ver ou editar a planilha:\n${LINK_CONTROLE_GASTOS}`;
+  return texto;
+}
+
 function resumoItemControle(item) {
   const disponivel = item.limite - item.gastoAcumulado;
   return `📊 *${item.nome}*${item.categoria ? ` (${item.categoria})` : ''}\n\n` +
@@ -33,21 +68,21 @@ function resumoItemControle(item) {
     `Disponível: ${formatarReal(disponivel)}\n\n` +
     `💵 Qual o valor do novo gasto?\n(Ex: 50 ou 50,00)`;
 }
- 
+
 export async function agenteFinanceiro(mensagem, remetente) {
   const texto = mensagem.trim();
   const estado = estados[remetente];
- 
+
   if (!estado) {
     estados[remetente] = { etapa: 'menu' };
     return {
       sucesso: true,
-      resposta: `💰 *Assistente Financeiro*\n\nO que deseja fazer?\n\n1️⃣  Ver / preencher planilha\n2️⃣  Registrar pagamento\n3️⃣  Controle de Gastos\n\nDigite *0* para sair.`
+      resposta: `💰 *Assistente Financeiro*\n\nO que deseja fazer?\n\n1️⃣  Ver / preencher planilha\n2️⃣  Registrar pagamento\n3️⃣  Controle de Gastos\n4️⃣  Consultar Dashboard\n\nDigite *0* para sair.`
     };
   }
- 
+
   let resultado;
- 
+
   switch (estado.etapa) {
     case 'menu':
       if (texto === '1') {
@@ -66,11 +101,21 @@ export async function agenteFinanceiro(mensagem, remetente) {
           delete estados[remetente];
           resultado = { sucesso: false, resposta: '⚠️ Não consegui acessar a planilha de Controle de Gastos. Tente novamente.' };
         }
+      } else if (texto === '4') {
+        try {
+          const itensDashboard = await lerItensControleGastos();
+          delete estados[remetente];
+          resultado = { sucesso: true, resposta: montarDashboardControle(itensDashboard) };
+        } catch (error) {
+          console.error('Erro ao montar Dashboard do Controle de Gastos:', error);
+          delete estados[remetente];
+          resultado = { sucesso: false, resposta: '⚠️ Não consegui acessar a planilha de Controle de Gastos. Tente novamente.' };
+        }
       } else {
-        resultado = { sucesso: false, resposta: '❌ Opção inválida. Digite 1, 2 ou 3.' };
+        resultado = { sucesso: false, resposta: '❌ Opção inválida. Digite 1, 2, 3 ou 4.' };
       }
       break;
- 
+
     case 'escolher_item': {
       const num = parseInt(texto);
       if (isNaN(num) || num < 1 || num > ITENS.length) {
@@ -83,12 +128,12 @@ export async function agenteFinanceiro(mensagem, remetente) {
       resultado = { sucesso: true, resposta: `💵 Qual o valor pago em *${estado.itemNome}*?\n(Ex: 250,00)` };
       break;
     }
- 
+
     case 'informar_valor': {
       const valorLimpo = texto.replace('R$', '').replace(' ', '').trim();
       if (!/^\d+([,.]\d{1,2})?$/.test(valorLimpo)) {
         resultado = { sucesso: false, resposta: '❌ Valor inválido. Ex: 250 ou 250,30' };
- 
+
         break;
       }
       estado.valor = valorLimpo.replace(',', '.');
@@ -96,7 +141,7 @@ export async function agenteFinanceiro(mensagem, remetente) {
       resultado = { sucesso: true, resposta: `📅 Qual o mês?\n(JAN, FEV, MAR, ABR, MAI, JUN, JUL, AGO, SET, OUT, NOV, DEZ)` };
       break;
     }
- 
+
     case 'informar_mes': {
       const mes = texto.toUpperCase().trim();
       if (!MESES_VALIDOS.includes(mes)) {
@@ -111,12 +156,12 @@ export async function agenteFinanceiro(mensagem, remetente) {
       };
       break;
     }
- 
+
     case 'confirmar': {
       if (texto.toLowerCase() === 'sim') {
         try {
           await preencherGasto(estado.itemNome, estado.mes, estado.valor);
- 
+
           resultado = { sucesso: true, resposta: `✅ *${estado.itemNome}* — R$${estado.valor.replace('.', ',')} registrado como *Pago* em *${estado.mes}*!` };
         } catch (error) {
           console.error('Erro ao preencher gasto:', error);
@@ -131,7 +176,7 @@ export async function agenteFinanceiro(mensagem, remetente) {
       }
       break;
     }
- 
+
     case 'cg_escolher_item': {
       const itens = estado.itensControle || [];
       const num = parseInt(texto);
@@ -144,7 +189,7 @@ export async function agenteFinanceiro(mensagem, remetente) {
       resultado = { sucesso: true, resposta: resumoItemControle(estado.itemControle) };
       break;
     }
- 
+
     case 'cg_informar_valor': {
       const valorLimpo = texto.replace('R$', '').replace(' ', '').trim();
       if (!/^\d+([,.]\d{1,2})?$/.test(valorLimpo)) {
@@ -159,7 +204,7 @@ export async function agenteFinanceiro(mensagem, remetente) {
       };
       break;
     }
- 
+
     case 'cg_confirmar': {
       if (texto.toLowerCase() === 'sim') {
         try {
@@ -186,12 +231,12 @@ export async function agenteFinanceiro(mensagem, remetente) {
       }
       break;
     }
- 
+
     default:
       delete estados[remetente];
       resultado = { sucesso: false, resposta: "Ocorreu um erro. Digite *$* para recomeçar." };
       break;
   }
- 
+
   return resultado;
 }
