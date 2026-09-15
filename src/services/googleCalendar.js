@@ -94,3 +94,33 @@ export async function listarEventosDoDia(date) {
     throw error;
   }
 }
+
+// Lista os eventos NÃO recorrentes (avulsos) de um mês inteiro.
+// ano: ex. 2026 · mes: 1 a 12
+// "Não recorrente" = instância sem `recurringEventId` — ou seja, não veio de uma série
+// (repetição semanal/mensal etc. configurada direto no Google Calendar).
+export async function listarEventosNaoRecorrentesDoMes(ano, mes) {
+  try {
+    const calendar = await getCalendarService();
+
+    const mesStr = String(mes).padStart(2, '0');
+    const ultimoDia = new Date(ano, mes, 0).getDate();
+    const inicioMes = new Date(`${ano}-${mesStr}-01T00:00:00-03:00`);
+    const fimMes = new Date(`${ano}-${mesStr}-${String(ultimoDia).padStart(2, '0')}T23:59:59-03:00`);
+
+    const response = await calendar.events.list({
+      calendarId: CALENDAR_ID,
+      timeMin: inicioMes.toISOString(),
+      timeMax: fimMes.toISOString(),
+      singleEvents: true,
+      orderBy: 'startTime',
+    });
+
+    const events = response.data.items || [];
+    return events.filter(evento => !evento.recurringEventId);
+
+  } catch (error) {
+    console.error('Erro ao listar eventos não recorrentes do mês:', error);
+    throw error;
+  }
+}

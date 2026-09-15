@@ -1,4 +1,5 @@
 import { listarEventosDoDia, listarEventosNaoRecorrentesDoMes } from '../services/googleCalendar.js';
+import { lerLembretesAtivos } from '../services/googleLembretes.js';
 import { sendMessage } from '../services/twilio.js';
 
 const NUMERO_DESTINO = process.env.TWILIO_WHATSAPP_DEST || 'whatsapp:+5519981394446';
@@ -32,11 +33,36 @@ export async function enviarResumoDiario() {
 
     const eventosAmanha = await listarEventosDoDia(dataStr);
 
-    let mensagem;
+    // Tenta buscar lembretes, mas não quebra o fluxo se falhar
+    let lembretes = [];
+    try {
+      lembretes = await lerLembretesAtivos();
+    } catch (erroLembretes) {
+      console.error('Erro ao buscar lembretes ativos:', erroLembretes);
+    }
+
+    let mensagem = '';
+
+    // Seção de Lembretes (sempre aparece se houver)
+    if (lembretes && lembretes.length > 0) {
+      mensagem += `🔔 *Lembretes Ativos*\n\n`;
+      lembretes.forEach(lembrete => {
+        mensagem += `✓ ${lembrete.descricao}`;
+        if (lembrete.data && lembrete.data !== 'sem data') {
+          mensagem += ` (${lembrete.data}`;
+          if (lembrete.hora && lembrete.hora !== 'sem hora') mensagem += ` às ${lembrete.hora}`;
+          mensagem += ')';
+        }
+        mensagem += '\n';
+      });
+      mensagem += '\n';
+    }
+
+    // Seção de Agenda de Amanhã
     if (!eventosAmanha || eventosAmanha.length === 0) {
-      mensagem = `📅 *Agenda de amanhã (${dia}/${mes})*\n\nNenhum compromisso agendado. ✅`;
+      mensagem += `📅 *Agenda de amanhã (${dia}/${mes})*\n\nNenhum compromisso agendado. ✅`;
     } else {
-      mensagem = `📅 *Agenda de amanhã (${dia}/${mes})*\n\n`;
+      mensagem += `📅 *Agenda de amanhã (${dia}/${mes})*\n\n`;
       eventosAmanha.forEach(evento => {
         mensagem += `🕐 *${horarioDoEvento(evento)}* — ${evento.summary}\n`;
         if (evento.description) mensagem += `   📝 ${evento.description}\n`;
