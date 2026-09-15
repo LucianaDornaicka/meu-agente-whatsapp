@@ -1,5 +1,6 @@
 import express from "express";
 import { handle } from "./agents/orchestrator.js";
+import { enviarResumoDiario } from "./services/resumoAgenda.js";
 import { router as authRoutes, autenticar } from '../server-routes/auth.js'
 import agendaRoutes from '../server-routes/agenda.js'
 import videosRoutes from '../server-routes/videos.js'
@@ -58,4 +59,9 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
+// Rota temporária de teste
+app.get("/testar-resumo", async (req, res) => {
+  await enviarResumoDiario();
+  res.send("Resumo disparado!");
+});
 });
